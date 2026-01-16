@@ -1,0 +1,130 @@
+import { MonthlyData } from '@/types/dashboard';
+
+export const mockPMData: MonthlyData = {
+  month: 'January',
+  year: 2025,
+  profile: {
+    id: 'pm-001',
+    name: 'Priya Sharma',
+    city: 'Bangalore',
+    zone: 'South Zone',
+    portfolioSize: 127,
+    salary: 45000,
+    mappedRevenue: 180000,
+  },
+  propertyScore: {
+    operations: {
+      serviceRequestsScore: 8.5,
+      reportWorkScore: 4.2,
+      moveInReportScore: 9.0,
+      moveOutScore: 8.5,
+      utilityBillHandling: 4.5,
+    },
+    financial: {
+      paidRentPaymentScore: 8.5,
+      utilityBillClosureAccuracy: 4.0,
+      latePenalty: -5,
+      daysLate: 8,
+    },
+    customer: {
+      tenantAppReviewScore: 4.2,
+      ownerAppReviewScore: 4.5,
+      timelyRenewalInitiation: 4.0,
+      renewalPercentScore: 8.5,
+    },
+    ecosystem: {
+      ownerAppDownload: 4.0,
+      homeInsuranceActivation: 3.5,
+      leaseAgreement: 4.5,
+      utilityEnablement: 4.0,
+    },
+    rawScore: 76.4,
+    medianAdjustmentFactor: 1.05,
+    adjustedScore: 80.2,
+  },
+  revenueScore: {
+    revenueAchieved: 270000,
+    revenueMapped: 180000,
+    salaryMultiple: 1.5,
+    slabAchieved: '1.5× Salary',
+    score: 75,
+  },
+  totalScore: 155.2,
+  eligibilityStatus: 'eligible',
+  incentive: {
+    baseIncentivePercent: 7.5,
+    baseIncentiveAmount: 13500,
+    releasePercent: 100,
+    finalPayableAmount: 13500,
+    isBlocked: false,
+  },
+  awards: [
+    {
+      id: 'award-1',
+      name: 'PM of the Month',
+      type: 'monthly',
+      isEligible: true,
+      currentRank: 3,
+    },
+    {
+      id: 'award-2',
+      name: 'CX Champion',
+      type: 'monthly',
+      isEligible: true,
+      percentile: 85,
+    },
+    {
+      id: 'award-3',
+      name: 'Renewal Star',
+      type: 'monthly',
+      isEligible: false,
+      currentRank: 12,
+    },
+    {
+      id: 'award-4',
+      name: 'Financial Discipline',
+      type: 'monthly',
+      isEligible: false,
+    },
+    {
+      id: 'award-5',
+      name: 'Annual Trip',
+      type: 'trip',
+      isEligible: true,
+      percentile: 18,
+    },
+  ],
+  coachingSuggestions: [
+    {
+      id: 'coach-1',
+      metric: 'On-time Rent Collection',
+      currentValue: 85,
+      targetValue: 95,
+      suggestion: 'Improve on-time rent by 10% to avoid late penalties and boost Financial Discipline score.',
+      impact: 'high',
+    },
+    {
+      id: 'coach-2',
+      metric: 'Renewal Initiation',
+      currentValue: 80,
+      targetValue: 90,
+      suggestion: 'Start 3 more renewal conversations 60-90 days before expiry to maximize retention.',
+      impact: 'medium',
+    },
+    {
+      id: 'coach-3',
+      metric: 'Home Insurance Activation',
+      currentValue: 70,
+      targetValue: 90,
+      suggestion: 'Activate home insurance for 25 more properties to earn full Ecosystem points.',
+      impact: 'medium',
+    },
+  ],
+};
+
+export const monthOptions = [
+  'January 2025',
+  'December 2024',
+  'November 2024',
+  'October 2024',
+];
