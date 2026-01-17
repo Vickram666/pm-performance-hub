@@ -9,7 +9,8 @@ import { RevenueSection } from '@/components/dashboard/RevenueSection';
 import { IncentiveSection } from '@/components/dashboard/IncentiveSection';
 import { CoachingSection } from '@/components/dashboard/CoachingSection';
 import { AwardsSection } from '@/components/dashboard/AwardsSection';
-import { mockPMData } from '@/data/mockData';
+import { HistoricalTrendsSection } from '@/components/dashboard/HistoricalTrendsSection';
+import { mockPMData, mockHistoricalTrends } from '@/data/mockData';
 
 export default function PMDashboard() {
   const { pmId } = useParams();
@@ -96,6 +97,9 @@ export default function PMDashboard() {
 
         {/* Awards Section */}
         <AwardsSection awards={data.awards} />
+
+        {/* Historical Trends */}
+        <HistoricalTrendsSection trends={mockHistoricalTrends} />
 
         {/* Footer */}
         <footer className="text-center py-8 text-sm text-muted-foreground">

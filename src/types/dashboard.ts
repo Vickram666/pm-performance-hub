@@ -98,3 +98,28 @@ export interface MonthlyData {
   awards: Award[];
   coachingSuggestions: CoachingSuggestion[];
 }
+
+// Historical Trend Types
+export interface HistoricalDataPoint {
+  month: string;
+  propertyScore: number;
+  revenueScore: number;
+  totalScore: number;
+  incentiveAmount: number;
+  eligibilityStatus: EligibilityStatus;
+  operationsScore: number;
+  financialScore: number;
+  customerScore: number;
+  ecosystemScore: number;
+}
+
+export interface HistoricalTrends {
+  dataPoints: HistoricalDataPoint[];
+  averagePropertyScore: number;
+  averageRevenueScore: number;
+  averageTotalScore: number;
+  totalIncentiveEarned: number;
+  bestMonth: string;
+  worstMonth: string;
+  trend: 'improving' | 'declining' | 'stable';
+}
