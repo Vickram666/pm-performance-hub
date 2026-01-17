@@ -36,7 +36,7 @@ export const PillarBreakdownChart = ({ dataPoints }: PillarBreakdownChartProps) 
                 operationsScore: 'Operations',
                 financialScore: 'Financial',
                 customerScore: 'Customer',
-                ecosystemScore: 'Ecosystem',
+                renewalScore: 'Renewal',
               };
               return [value.toFixed(1), labels[name] || name];
             }}
@@ -48,7 +48,7 @@ export const PillarBreakdownChart = ({ dataPoints }: PillarBreakdownChartProps) 
                 operationsScore: 'Ops',
                 financialScore: 'Fin',
                 customerScore: 'CX',
-                ecosystemScore: 'Eco',
+                renewalScore: 'Renewal',
               };
               return labels[value] || value;
             }}
@@ -76,7 +76,7 @@ export const PillarBreakdownChart = ({ dataPoints }: PillarBreakdownChartProps) 
           />
           <Area
             type="monotone"
-            dataKey="ecosystemScore"
+            dataKey="renewalScore"
             stackId="1"
             stroke="hsl(280 65% 60%)"
             fill="hsl(280 65% 60% / 0.6)"

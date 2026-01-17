@@ -11,39 +11,38 @@ export interface PMProfile {
 }
 
 export interface OperationsMetrics {
-  serviceRequestsScore: number; // max 10
-  reportWorkScore: number; // max 5
+  serviceRequestsSLAScore: number; // max 10
+  reportAccuracyScore: number; // max 5
   moveInReportScore: number; // max 10
   moveOutScore: number; // max 10
   utilityBillHandling: number; // max 5
 }
 
 export interface FinancialMetrics {
-  paidRentPaymentScore: number; // max 10
-  utilityBillClosureAccuracy: number; // max 5
-  latePenalty: number; // negative value
+  paidRentOnTimeScore: number; // max 15
+  latePenalty: number; // 0 / -5 / -10
   daysLate: number;
 }
 
 export interface CustomerMetrics {
   tenantAppReviewScore: number; // max 5
   ownerAppReviewScore: number; // max 5
-  timelyRenewalInitiation: number; // max 5
-  renewalPercentScore: number; // max 10
+  ownerAppDownload: number; // max 5
+  tenantAppDownload: number; // max 5
 }
 
-export interface EcosystemMetrics {
-  ownerAppDownload: number; // max 5
-  homeInsuranceActivation: number; // max 5
-  leaseAgreement: number; // max 5
-  utilityEnablement: number; // max 5
+export interface RenewalMetrics {
+  timelyRenewalInitiation: number; // max 5
+  renewalRAUploadTimely: number; // max 5
+  renewalPercentScore: number; // max 10
+  homeInsurance: number; // max 5
 }
 
 export interface PropertyScore {
   operations: OperationsMetrics;
   financial: FinancialMetrics;
   customer: CustomerMetrics;
-  ecosystem: EcosystemMetrics;
+  renewal: RenewalMetrics;
   rawScore: number;
   medianAdjustmentFactor: number;
   adjustedScore: number;
@@ -110,7 +109,7 @@ export interface HistoricalDataPoint {
   operationsScore: number;
   financialScore: number;
   customerScore: number;
-  ecosystemScore: number;
+  renewalScore: number;
 }
 
 export interface HistoricalTrends {

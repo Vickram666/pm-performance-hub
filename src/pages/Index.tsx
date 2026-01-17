@@ -9,7 +9,8 @@ import { RevenueSection } from '@/components/dashboard/RevenueSection';
 import { IncentiveSection } from '@/components/dashboard/IncentiveSection';
 import { CoachingSection } from '@/components/dashboard/CoachingSection';
 import { AwardsSection } from '@/components/dashboard/AwardsSection';
-import { mockPMData } from '@/data/mockData';
+import { HistoricalTrendsSection } from '@/components/dashboard/HistoricalTrendsSection';
+import { mockPMData, mockHistoricalTrends } from '@/data/mockData';
 
 const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState('January 2025');
@@ -57,6 +58,10 @@ const Index = () => {
           mappedRevenue={data.profile.mappedRevenue}
           eligibilityStatus={data.eligibilityStatus}
         />
+        
+        {/* Historical Trends Section */}
+        <HistoricalTrendsSection trends={mockHistoricalTrends} />
+        
         <CoachingSection suggestions={data.coachingSuggestions} />
         <AwardsSection awards={data.awards} />
         <footer className="text-center py-8 text-sm text-muted-foreground">

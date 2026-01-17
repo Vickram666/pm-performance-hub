@@ -14,33 +14,32 @@ export const mockPMData: MonthlyData = {
   },
   propertyScore: {
     operations: {
-      serviceRequestsScore: 8.5,
-      reportWorkScore: 4.2,
+      serviceRequestsSLAScore: 8.5,
+      reportAccuracyScore: 4.2,
       moveInReportScore: 9.0,
       moveOutScore: 8.5,
       utilityBillHandling: 4.5,
     },
     financial: {
-      paidRentPaymentScore: 8.5,
-      utilityBillClosureAccuracy: 4.0,
+      paidRentOnTimeScore: 12.5,
       latePenalty: -5,
       daysLate: 8,
     },
     customer: {
       tenantAppReviewScore: 4.2,
       ownerAppReviewScore: 4.5,
-      timelyRenewalInitiation: 4.0,
-      renewalPercentScore: 8.5,
-    },
-    ecosystem: {
       ownerAppDownload: 4.0,
-      homeInsuranceActivation: 3.5,
-      leaseAgreement: 4.5,
-      utilityEnablement: 4.0,
+      tenantAppDownload: 3.8,
     },
-    rawScore: 76.4,
+    renewal: {
+      timelyRenewalInitiation: 4.0,
+      renewalRAUploadTimely: 4.2,
+      renewalPercentScore: 8.5,
+      homeInsurance: 3.5,
+    },
+    rawScore: 75.4,
     medianAdjustmentFactor: 1.05,
-    adjustedScore: 80.2,
+    adjustedScore: 79.2,
   },
   revenueScore: {
     revenueAchieved: 270000,
@@ -49,7 +48,7 @@ export const mockPMData: MonthlyData = {
     slabAchieved: '1.5× Salary',
     score: 75,
   },
-  totalScore: 155.2,
+  totalScore: 154.2,
   eligibilityStatus: 'eligible',
   incentive: {
     baseIncentivePercent: 7.5,
@@ -116,7 +115,7 @@ export const mockPMData: MonthlyData = {
       metric: 'Home Insurance Activation',
       currentValue: 70,
       targetValue: 90,
-      suggestion: 'Activate home insurance for 25 more properties to earn full Ecosystem points.',
+      suggestion: 'Activate home insurance for 25 more properties to earn full Renewal pillar points.',
       impact: 'medium',
     },
   ],
@@ -138,7 +137,7 @@ const generateHistoricalData = (): HistoricalDataPoint[] => {
   ];
   
   // Base values that gradually improve over time (older to newer)
-  const basePropertyScores = [68, 70, 72, 71, 74, 73, 76, 75, 78, 77, 79, 80.2];
+  const basePropertyScores = [68, 70, 72, 71, 74, 73, 76, 75, 78, 77, 79, 79.2];
   const baseRevenueScores = [50, 50, 50, 75, 75, 50, 75, 75, 50, 75, 75, 75];
   
   return months.map((month, index) => {
@@ -147,11 +146,11 @@ const generateHistoricalData = (): HistoricalDataPoint[] => {
     const revenueScore = baseRevenueScores[reversedIndex];
     const totalScore = propertyScore + revenueScore;
     
-    // Calculate pillar scores with some variance
-    const operationsScore = 28 + (Math.random() * 8);
-    const financialScore = 8 + (Math.random() * 6) - (Math.random() > 0.7 ? 5 : 0);
-    const customerScore = 18 + (Math.random() * 5);
-    const ecosystemScore = 12 + (Math.random() * 6);
+    // Calculate pillar scores with variance (new structure)
+    const operationsScore = 28 + (Math.random() * 8); // max 40
+    const financialScore = 10 + (Math.random() * 4) - (Math.random() > 0.7 ? 5 : 0); // max 15 - penalty
+    const customerScore = 20 + (Math.random() * 8); // max 30
+    const renewalScore = 16 + (Math.random() * 6); // max 25
     
     let eligibilityStatus: EligibilityStatus = 'eligible';
     if (propertyScore < 50) {
@@ -183,7 +182,7 @@ const generateHistoricalData = (): HistoricalDataPoint[] => {
       operationsScore: Math.round(operationsScore * 10) / 10,
       financialScore: Math.round(financialScore * 10) / 10,
       customerScore: Math.round(customerScore * 10) / 10,
-      ecosystemScore: Math.round(ecosystemScore * 10) / 10,
+      renewalScore: Math.round(renewalScore * 10) / 10,
     };
   }).reverse(); // Oldest first for charts
 };
