@@ -1,6 +1,6 @@
 import { PropertyScore } from '@/types/dashboard';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, Wrench, DollarSign, Heart, Sparkles, AlertTriangle } from 'lucide-react';
+import { Wrench, DollarSign, Heart, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface PropertyScoreSectionProps {
   propertyScore: PropertyScore;
@@ -17,6 +17,7 @@ interface MetricRowProps {
 const MetricRow = ({ label, earned, max, tooltip, isNegative = false }: MetricRowProps) => {
   const percentage = isNegative ? 0 : (earned / max) * 100;
   const displayValue = isNegative ? earned : earned.toFixed(1);
+  const completionPercent = isNegative ? 0 : Math.round((earned / max) * 100);
   
   return (
     <div className="space-y-1.5">
@@ -31,9 +32,14 @@ const MetricRow = ({ label, earned, max, tooltip, isNegative = false }: MetricRo
             </TooltipContent>
           </Tooltip>
         </div>
-        <span className={`font-semibold ${isNegative ? 'text-danger' : ''}`}>
-          {displayValue} / {max}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {!isNegative && `${completionPercent}%`}
+          </span>
+          <span className={`font-semibold ${isNegative ? 'text-danger' : ''}`}>
+            {displayValue} / {max}
+          </span>
+        </div>
       </div>
       <div className="progress-track">
         <div 
@@ -57,10 +63,11 @@ interface PillarCardProps {
   earned: number;
   max: number;
   children: React.ReactNode;
+  hasPenalty?: boolean;
 }
 
-const PillarCard = ({ title, icon: Icon, color, earned, max, children }: PillarCardProps) => {
-  const percentage = (earned / max) * 100;
+const PillarCard = ({ title, icon: Icon, color, earned, max, children, hasPenalty }: PillarCardProps) => {
+  const percentage = Math.max(0, (earned / max) * 100);
   
   return (
     <div className="pillar-card animate-slide-up">
@@ -71,11 +78,13 @@ const PillarCard = ({ title, icon: Icon, color, earned, max, children }: PillarC
           </div>
           <div>
             <h3 className="font-semibold text-foreground">{title}</h3>
-            <p className="text-xs text-muted-foreground">{percentage.toFixed(0)}% achieved</p>
+            <p className="text-xs text-muted-foreground">{Math.round(percentage)}% achieved</p>
           </div>
         </div>
         <div className="text-right">
-          <span className="text-2xl font-bold" style={{ color }}>{earned.toFixed(1)}</span>
+          <span className={`text-2xl font-bold ${hasPenalty && earned < 0 ? 'text-danger' : ''}`} style={{ color: hasPenalty && earned < 0 ? undefined : color }}>
+            {earned.toFixed(1)}
+          </span>
           <span className="text-sm text-muted-foreground">/{max}</span>
         </div>
       </div>
@@ -87,18 +96,22 @@ const PillarCard = ({ title, icon: Icon, color, earned, max, children }: PillarC
 };
 
 export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProps) => {
-  const { operations, financial, customer, ecosystem } = propertyScore;
+  const { operations, financial, customer, renewal } = propertyScore;
   
-  const operationsTotal = operations.serviceRequestsScore + operations.reportWorkScore + 
+  // Pillar 1: Operations & Execution (40 points)
+  const operationsTotal = operations.serviceRequestsSLAScore + operations.reportAccuracyScore + 
     operations.moveInReportScore + operations.moveOutScore + operations.utilityBillHandling;
   
-  const financialTotal = financial.paidRentPaymentScore + financial.utilityBillClosureAccuracy + financial.latePenalty;
+  // Pillar 2: Financial Discipline (15 points + penalty)
+  const financialTotal = financial.paidRentOnTimeScore + financial.latePenalty;
   
+  // Pillar 3: Customer Experience (30 points)
   const customerTotal = customer.tenantAppReviewScore + customer.ownerAppReviewScore + 
-    customer.timelyRenewalInitiation + customer.renewalPercentScore;
+    customer.ownerAppDownload + customer.tenantAppDownload;
   
-  const ecosystemTotal = ecosystem.ownerAppDownload + ecosystem.homeInsuranceActivation + 
-    ecosystem.leaseAgreement + ecosystem.utilityEnablement;
+  // Pillar 4: Renewal (25 points)
+  const renewalTotal = renewal.timelyRenewalInitiation + renewal.renewalRAUploadTimely + 
+    renewal.renewalPercentScore + renewal.homeInsurance;
 
   return (
     <section className="space-y-4">
@@ -115,7 +128,7 @@ export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProp
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Pillar 1: Operations */}
+        {/* Pillar 1: Operations & Execution (40 Points) */}
         <PillarCard 
           title="Operations & Execution" 
           icon={Wrench}
@@ -124,14 +137,14 @@ export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProp
           max={40}
         >
           <MetricRow 
-            label="Service Requests Score" 
-            earned={operations.serviceRequestsScore} 
+            label="Service Requests SLA Score" 
+            earned={operations.serviceRequestsSLAScore} 
             max={10}
             tooltip="% of service requests closed within SLA. Target: 95%+ for full score."
           />
           <MetricRow 
-            label="Report Work Score" 
-            earned={operations.reportWorkScore} 
+            label="Report Accuracy Score" 
+            earned={operations.reportAccuracyScore} 
             max={5}
             tooltip="Inspection, SR, and periodic reports accuracy and completeness."
           />
@@ -155,49 +168,57 @@ export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProp
           />
         </PillarCard>
 
-        {/* Pillar 2: Financial */}
+        {/* Pillar 2: Financial Discipline (15 Points + Penalty) */}
         <PillarCard 
           title="Financial Discipline" 
           icon={DollarSign}
           color="hsl(var(--pillar-financial))"
           earned={Math.max(0, financialTotal)}
           max={15}
+          hasPenalty={financial.latePenalty < 0}
         >
           <MetricRow 
-            label="Paid Rent Payment Score" 
-            earned={financial.paidRentPaymentScore} 
-            max={10}
-            tooltip="Rent credited on or before due date. Target: 95%+ on-time."
-          />
-          <MetricRow 
-            label="Utility Bill Closure Accuracy" 
-            earned={financial.utilityBillClosureAccuracy} 
-            max={5}
-            tooltip="All utility bills correctly settled and documented."
+            label="Paid Rent On-time Score" 
+            earned={financial.paidRentOnTimeScore} 
+            max={15}
+            tooltip="Rent credited on or before due date. Target: 95%+ on-time collection."
           />
           {financial.latePenalty < 0 && (
-            <div className="mt-3 p-3 bg-danger-light rounded-lg border border-danger/20">
-              <div className="flex items-center gap-2 text-danger">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="font-semibold">Late Rent Penalty Applied</span>
-              </div>
-              <p className="text-sm text-danger/80 mt-1">
-                {financial.daysLate} days late → {financial.latePenalty} points
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Grace period: 5 days | 6-15 days: -5 | 15+ days: -10
-              </p>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="mt-3 p-3 bg-danger-light rounded-lg border border-danger/20 cursor-help">
+                  <div className="flex items-center gap-2 text-danger">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="font-semibold">Late Rent Penalty Applied</span>
+                  </div>
+                  <p className="text-sm text-danger/80 mt-1">
+                    {financial.daysLate} days late → {financial.latePenalty} points
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Grace period: 5 days | 6-15 days: -5 | 15+ days: -10
+                  </p>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                <p className="font-medium mb-1">Late Rent Penalty Rules:</p>
+                <ul className="text-sm space-y-1">
+                  <li>• 0-5 days late: No penalty (Grace period)</li>
+                  <li>• 6-15 days late: -5 points</li>
+                  <li>• 15+ days late: -10 points</li>
+                </ul>
+                <p className="text-xs text-muted-foreground mt-2">Penalty is deducted in real-time from Financial score.</p>
+              </TooltipContent>
+            </Tooltip>
           )}
         </PillarCard>
 
-        {/* Pillar 3: Customer Experience */}
+        {/* Pillar 3: Customer Experience (30 Points) */}
         <PillarCard 
-          title="Customer Experience & Retention" 
+          title="Customer Experience" 
           icon={Heart}
           color="hsl(var(--pillar-customer))"
           earned={customerTotal}
-          max={25}
+          max={30}
         >
           <MetricRow 
             label="Tenant App Review Score" 
@@ -212,50 +233,50 @@ export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProp
             tooltip="Average rating from owner app reviews. Target: 4.5+ stars."
           />
           <MetricRow 
-            label="Timely Renewal Initiation" 
-            earned={customer.timelyRenewalInitiation} 
-            max={5}
-            tooltip="Renewal conversation started 60-90 days before expiry."
-          />
-          <MetricRow 
-            label="Renewal % Score" 
-            earned={customer.renewalPercentScore} 
-            max={10}
-            tooltip="% of eligible leases successfully renewed. Target: 80%+."
-          />
-        </PillarCard>
-
-        {/* Pillar 4: Ecosystem */}
-        <PillarCard 
-          title="Ecosystem & Value Addition" 
-          icon={Sparkles}
-          color="hsl(var(--pillar-ecosystem))"
-          earned={ecosystemTotal}
-          max={20}
-        >
-          <MetricRow 
-            label="Owner App Download & Activation" 
-            earned={ecosystem.ownerAppDownload} 
+            label="Owner App Download" 
+            earned={customer.ownerAppDownload} 
             max={5}
             tooltip="% of owners with active app accounts."
           />
           <MetricRow 
-            label="Home Insurance Activation" 
-            earned={ecosystem.homeInsuranceActivation} 
+            label="Tenant App Download" 
+            earned={customer.tenantAppDownload} 
+            max={5}
+            tooltip="% of tenants with active app accounts."
+          />
+        </PillarCard>
+
+        {/* Pillar 4: Renewal (25 Points) */}
+        <PillarCard 
+          title="Renewal" 
+          icon={RefreshCw}
+          color="hsl(var(--pillar-ecosystem))"
+          earned={renewalTotal}
+          max={25}
+        >
+          <MetricRow 
+            label="Timely Renewal Initiation" 
+            earned={renewal.timelyRenewalInitiation} 
+            max={5}
+            tooltip="Renewal conversation started 60-90 days before expiry."
+          />
+          <MetricRow 
+            label="Renewal RA Upload Timely" 
+            earned={renewal.renewalRAUploadTimely} 
+            max={5}
+            tooltip="Rent Agreement uploaded within 7 days of renewal confirmation."
+          />
+          <MetricRow 
+            label="Renewal % Score" 
+            earned={renewal.renewalPercentScore} 
+            max={10}
+            tooltip="% of eligible leases successfully renewed. Target: 80%+."
+          />
+          <MetricRow 
+            label="Home Insurance" 
+            earned={renewal.homeInsurance} 
             max={5}
             tooltip="% of properties with active home insurance."
-          />
-          <MetricRow 
-            label="Lease Agreement (New/Renewal)" 
-            earned={ecosystem.leaseAgreement} 
-            max={5}
-            tooltip="Digital lease agreements completed on platform."
-          />
-          <MetricRow 
-            label="Utility Enablement" 
-            earned={ecosystem.utilityEnablement} 
-            max={5}
-            tooltip="New tenant utility connections completed through platform."
           />
         </PillarCard>
       </div>
