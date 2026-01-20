@@ -1,32 +1,31 @@
-import { PMProfile, EligibilityStatus } from '@/types/dashboard';
-import { Building2, MapPin, Layers, Calendar, ChevronDown, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { PMProfile, EligibilityStatus, PayoutBand } from '@/types/dashboard';
+import { Building2, MapPin, Layers, Calendar, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { monthOptions } from '@/data/mockData';
 
 interface HeaderSummaryProps {
   profile: PMProfile;
-  adjustedPropertyScore: number;
-  revenueScore: number;
-  totalScore: number;
+  finalMonthlyScore: number;
+  payoutBand: PayoutBand;
   eligibilityStatus: EligibilityStatus;
   selectedMonth: string;
   onMonthChange: (month: string) => void;
 }
 
-const StatusBadge = ({ status }: { status: EligibilityStatus }) => {
+const StatusBadge = ({ status, payoutBand }: { status: EligibilityStatus; payoutBand: PayoutBand }) => {
   const config = {
     eligible: {
-      label: 'Eligible',
+      label: `100% Payout`,
       icon: CheckCircle2,
       className: 'bg-success-light text-success',
     },
     partial: {
-      label: 'Partially Eligible',
+      label: `${payoutBand} Payout`,
       icon: AlertTriangle,
       className: 'bg-warning-light text-warning',
     },
     blocked: {
-      label: 'Not Eligible',
+      label: 'No Incentive',
       icon: XCircle,
       className: 'bg-danger-light text-danger',
     },
@@ -44,26 +43,34 @@ const StatusBadge = ({ status }: { status: EligibilityStatus }) => {
 
 const ScoreCircle = ({ 
   score, 
-  maxScore, 
-  label, 
-  color 
+  label,
+  sublabel,
+  colorClass 
 }: { 
   score: number; 
-  maxScore: number; 
   label: string;
-  color: string;
+  sublabel?: string;
+  colorClass: string;
 }) => {
-  const percentage = (score / maxScore) * 100;
+  const percentage = (score / 100) * 100;
   const circumference = 2 * Math.PI * 40;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+  // Determine color based on score bands
+  const getStrokeColor = (score: number) => {
+    if (score >= 80) return 'hsl(142 76% 36%)'; // Green
+    if (score >= 70) return 'hsl(38 92% 50%)'; // Amber
+    if (score >= 60) return 'hsl(38 92% 50%)'; // Amber
+    return 'hsl(0 84% 60%)'; // Red
+  };
+
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-28 h-28">
+      <div className="relative w-32 h-32">
         <svg className="w-full h-full transform -rotate-90">
           <circle
-            cx="56"
-            cy="56"
+            cx="64"
+            cy="64"
             r="40"
             stroke="currentColor"
             strokeWidth="8"
@@ -71,10 +78,10 @@ const ScoreCircle = ({
             className="text-secondary"
           />
           <circle
-            cx="56"
-            cy="56"
+            cx="64"
+            cy="64"
             r="40"
-            stroke={color}
+            stroke={getStrokeColor(score)}
             strokeWidth="8"
             fill="none"
             strokeLinecap="round"
@@ -83,21 +90,21 @@ const ScoreCircle = ({
             className="transition-all duration-1000 ease-out"
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold">{score.toFixed(1)}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-3xl font-bold">{score.toFixed(0)}</span>
+          <span className="text-xs text-muted-foreground">out of 100</span>
         </div>
       </div>
-      <span className="mt-2 text-sm font-medium text-muted-foreground">{label}</span>
-      <span className="text-xs text-muted-foreground">out of {maxScore}</span>
+      <span className="mt-2 text-sm font-medium text-foreground">{label}</span>
+      {sublabel && <span className="text-xs text-muted-foreground">{sublabel}</span>}
     </div>
   );
 };
 
 export const HeaderSummary = ({
   profile,
-  adjustedPropertyScore,
-  revenueScore,
-  totalScore,
+  finalMonthlyScore,
+  payoutBand,
   eligibilityStatus,
   selectedMonth,
   onMonthChange,
@@ -140,36 +147,22 @@ export const HeaderSummary = ({
           </div>
         </div>
 
-        {/* Score Cards Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          <div className="col-span-2 md:col-span-1 flex justify-center">
-            <ScoreCircle 
-              score={adjustedPropertyScore} 
-              maxScore={100} 
-              label="Property Score"
-              color="hsl(var(--pillar-operations))"
-            />
-          </div>
-          <div className="col-span-2 md:col-span-1 flex justify-center">
-            <ScoreCircle 
-              score={revenueScore} 
-              maxScore={100} 
-              label="Revenue Score"
-              color="hsl(var(--pillar-customer))"
-            />
-          </div>
-          <div className="col-span-2 md:col-span-1 flex justify-center">
-            <div className="flex flex-col items-center">
-              <div className="w-28 h-28 rounded-full bg-gradient-hero flex items-center justify-center">
-                <span className="text-3xl font-bold text-primary-foreground">{totalScore.toFixed(0)}</span>
-              </div>
-              <span className="mt-2 text-sm font-medium text-muted-foreground">Total Score</span>
-              <span className="text-xs text-muted-foreground">out of 200</span>
-            </div>
-          </div>
-          <div className="col-span-2 md:col-span-1 flex flex-col items-center justify-center">
-            <span className="text-sm font-medium text-muted-foreground mb-2">Incentive Status</span>
-            <StatusBadge status={eligibilityStatus} />
+        {/* Score Cards Row - Simplified to just Final Monthly Score and Status */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+          <ScoreCircle 
+            score={finalMonthlyScore} 
+            label="Final Monthly Score"
+            sublabel="Avg Property Health"
+            colorClass="text-primary"
+          />
+          <div className="flex flex-col items-center justify-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Incentive Eligibility</span>
+            <StatusBadge status={eligibilityStatus} payoutBand={payoutBand} />
+            <span className="text-xs text-muted-foreground mt-1">
+              {payoutBand === '100%' ? 'Score ≥80' : 
+               payoutBand === '75%' ? 'Score 70-79' :
+               payoutBand === '50%' ? 'Score 60-69' : 'Score <60'}
+            </span>
           </div>
         </div>
       </div>

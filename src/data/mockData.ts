@@ -1,4 +1,4 @@
-import { MonthlyData, HistoricalTrends, HistoricalDataPoint, EligibilityStatus } from '@/types/dashboard';
+import { MonthlyData, HistoricalTrends, HistoricalDataPoint, EligibilityStatus, PayoutBand, getPayoutBand, getEligibilityFromBand } from '@/types/dashboard';
 
 export const mockPMData: MonthlyData = {
   month: 'January',
@@ -9,8 +9,6 @@ export const mockPMData: MonthlyData = {
     city: 'Bangalore',
     zone: 'South Zone',
     portfolioSize: 127,
-    salary: 45000,
-    mappedRevenue: 180000,
   },
   propertyScore: {
     operations: {
@@ -39,22 +37,13 @@ export const mockPMData: MonthlyData = {
     },
     rawScore: 75.4,
     medianAdjustmentFactor: 1.05,
-    adjustedScore: 79.2,
+    adjustedScore: 74,
   },
-  revenueScore: {
-    revenueAchieved: 270000,
-    revenueMapped: 180000,
-    salaryMultiple: 1.5,
-    slabAchieved: '1.5× Salary',
-    score: 75,
-  },
-  totalScore: 154.2,
-  eligibilityStatus: 'eligible',
-  incentive: {
-    baseIncentivePercent: 7.5,
-    baseIncentiveAmount: 13500,
-    releasePercent: 100,
-    finalPayableAmount: 13500,
+  finalMonthlyScore: 74, // Avg property health score
+  eligibilityStatus: 'partial',
+  incentiveEligibility: {
+    finalMonthlyScore: 74,
+    payoutBand: '75%',
     isBlocked: false,
   },
   awards: [
@@ -99,7 +88,7 @@ export const mockPMData: MonthlyData = {
       metric: 'On-time Rent Collection',
       currentValue: 85,
       targetValue: 95,
-      suggestion: 'Improve on-time rent by 10% to avoid late penalties and boost Financial Discipline score.',
+      suggestion: 'Fix late rent in 3 properties to improve your score by ~6 points.',
       impact: 'high',
     },
     {
@@ -107,8 +96,8 @@ export const mockPMData: MonthlyData = {
       metric: 'Renewal Initiation',
       currentValue: 80,
       targetValue: 90,
-      suggestion: 'Start 3 more renewal conversations 60-90 days before expiry to maximize retention.',
-      impact: 'medium',
+      suggestion: 'Initiate renewals on 2 expiring leases to reach 80+ score for 100% payout.',
+      impact: 'high',
     },
     {
       id: 'coach-3',
@@ -137,47 +126,26 @@ const generateHistoricalData = (): HistoricalDataPoint[] => {
   ];
   
   // Base values that gradually improve over time (older to newer)
-  const basePropertyScores = [68, 70, 72, 71, 74, 73, 76, 75, 78, 77, 79, 79.2];
-  const baseRevenueScores = [50, 50, 50, 75, 75, 50, 75, 75, 50, 75, 75, 75];
+  const basePropertyScores = [62, 65, 68, 71, 69, 73, 72, 75, 74, 77, 76, 74];
   
   return months.map((month, index) => {
     const reversedIndex = 11 - index; // So newest month uses last values
-    const propertyScore = basePropertyScores[reversedIndex] + (Math.random() * 2 - 1);
-    const revenueScore = baseRevenueScores[reversedIndex];
-    const totalScore = propertyScore + revenueScore;
+    const propertyScore = basePropertyScores[reversedIndex] + (Math.random() * 4 - 2);
+    const finalScore = Math.round(propertyScore * 10) / 10;
     
     // Calculate pillar scores with variance (new structure)
     const operationsScore = 28 + (Math.random() * 8); // max 40
     const financialScore = 10 + (Math.random() * 4) - (Math.random() > 0.7 ? 5 : 0); // max 15 - penalty
-    const customerScore = 20 + (Math.random() * 8); // max 30
+    const customerScore = 14 + (Math.random() * 6); // max 20
     const renewalScore = 16 + (Math.random() * 6); // max 25
     
-    let eligibilityStatus: EligibilityStatus = 'eligible';
-    if (propertyScore < 50) {
-      eligibilityStatus = 'blocked';
-    } else if (propertyScore < 65) {
-      eligibilityStatus = 'partial';
-    }
-    
-    // Calculate incentive based on scores
-    let incentivePercent = 5;
-    if (revenueScore >= 75) incentivePercent = 7.5;
-    if (revenueScore >= 100) incentivePercent = 10;
-    
-    let releasePercent = 100;
-    if (propertyScore < 50) releasePercent = 0;
-    else if (propertyScore < 65) releasePercent = 50;
-    else if (propertyScore < 80) releasePercent = 75;
-    
-    const baseIncentive = 180000 * (incentivePercent / 100);
-    const incentiveAmount = baseIncentive * (releasePercent / 100);
+    const payoutBand = getPayoutBand(finalScore);
+    const eligibilityStatus = getEligibilityFromBand(payoutBand, false);
     
     return {
       month,
-      propertyScore: Math.round(propertyScore * 10) / 10,
-      revenueScore,
-      totalScore: Math.round(totalScore * 10) / 10,
-      incentiveAmount: Math.round(incentiveAmount),
+      propertyScore: finalScore,
+      payoutBand,
       eligibilityStatus,
       operationsScore: Math.round(operationsScore * 10) / 10,
       financialScore: Math.round(financialScore * 10) / 10,
@@ -189,28 +157,28 @@ const generateHistoricalData = (): HistoricalDataPoint[] => {
 
 const historicalData = generateHistoricalData();
 
-// Calculate trend
+// Calculate trend based on property score only
 const calculateTrend = (data: HistoricalDataPoint[]): 'improving' | 'declining' | 'stable' => {
   const recent = data.slice(-3);
   const older = data.slice(0, 3);
-  const recentAvg = recent.reduce((sum, d) => sum + d.totalScore, 0) / 3;
-  const olderAvg = older.reduce((sum, d) => sum + d.totalScore, 0) / 3;
+  const recentAvg = recent.reduce((sum, d) => sum + d.propertyScore, 0) / 3;
+  const olderAvg = older.reduce((sum, d) => sum + d.propertyScore, 0) / 3;
   
-  if (recentAvg > olderAvg + 5) return 'improving';
-  if (recentAvg < olderAvg - 5) return 'declining';
+  if (recentAvg > olderAvg + 3) return 'improving';
+  if (recentAvg < olderAvg - 3) return 'declining';
   return 'stable';
 };
 
-// Find best and worst months
+// Find best and worst months based on property score
 const findBestMonth = (data: HistoricalDataPoint[]): string => {
   return data.reduce((best, current) => 
-    current.totalScore > best.totalScore ? current : best
+    current.propertyScore > best.propertyScore ? current : best
   ).month;
 };
 
 const findWorstMonth = (data: HistoricalDataPoint[]): string => {
   return data.reduce((worst, current) => 
-    current.totalScore < worst.totalScore ? current : worst
+    current.propertyScore < worst.propertyScore ? current : worst
   ).month;
 };
 
@@ -219,13 +187,6 @@ export const mockHistoricalTrends: HistoricalTrends = {
   averagePropertyScore: Math.round(
     historicalData.reduce((sum, d) => sum + d.propertyScore, 0) / historicalData.length * 10
   ) / 10,
-  averageRevenueScore: Math.round(
-    historicalData.reduce((sum, d) => sum + d.revenueScore, 0) / historicalData.length * 10
-  ) / 10,
-  averageTotalScore: Math.round(
-    historicalData.reduce((sum, d) => sum + d.totalScore, 0) / historicalData.length * 10
-  ) / 10,
-  totalIncentiveEarned: historicalData.reduce((sum, d) => sum + d.incentiveAmount, 0),
   bestMonth: findBestMonth(historicalData),
   worstMonth: findWorstMonth(historicalData),
   trend: calculateTrend(historicalData),

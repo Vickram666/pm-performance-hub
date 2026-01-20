@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Minus, Calendar, DollarSign, Award, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Calendar, Award, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { HistoricalTrends } from '@/types/dashboard';
@@ -9,14 +9,6 @@ import { PillarBreakdownChart } from './charts/PillarBreakdownChart';
 interface HistoricalTrendsSectionProps {
   trends: HistoricalTrends;
 }
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
 
 const TrendIcon = ({ trend }: { trend: 'improving' | 'declining' | 'stable' }) => {
   switch (trend) {
@@ -51,6 +43,9 @@ const TrendBadge = ({ trend }: { trend: 'improving' | 'declining' | 'stable' }) 
 };
 
 export const HistoricalTrendsSection = ({ trends }: HistoricalTrendsSectionProps) => {
+  // Calculate months with 100% payout
+  const fullPayoutMonths = trends.dataPoints.filter(d => d.payoutBand === '100%').length;
+  
   return (
     <Card>
       <CardHeader>
@@ -68,20 +63,20 @@ export const HistoricalTrendsSection = ({ trends }: HistoricalTrendsSectionProps
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Summary Stats */}
+        {/* Summary Stats - Simplified without revenue/rupee amounts */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-muted/50 rounded-lg p-4 text-center">
             <Target className="h-5 w-5 mx-auto mb-2 text-primary" />
-            <p className="text-2xl font-bold">{trends.averageTotalScore}</p>
-            <p className="text-xs text-muted-foreground">Avg Total Score</p>
+            <p className="text-2xl font-bold">{trends.averagePropertyScore}</p>
+            <p className="text-xs text-muted-foreground">Avg Monthly Score</p>
           </div>
           <div className="bg-muted/50 rounded-lg p-4 text-center">
-            <DollarSign className="h-5 w-5 mx-auto mb-2 text-green-500" />
-            <p className="text-2xl font-bold">{formatCurrency(trends.totalIncentiveEarned)}</p>
-            <p className="text-xs text-muted-foreground">Total Earned (12M)</p>
+            <Award className="h-5 w-5 mx-auto mb-2 text-green-500" />
+            <p className="text-2xl font-bold text-green-600">{fullPayoutMonths}</p>
+            <p className="text-xs text-muted-foreground">Months at 100%</p>
           </div>
           <div className="bg-muted/50 rounded-lg p-4 text-center">
-            <Award className="h-5 w-5 mx-auto mb-2 text-amber-500" />
+            <TrendingUp className="h-5 w-5 mx-auto mb-2 text-amber-500" />
             <p className="text-lg font-bold text-green-600">{trends.bestMonth}</p>
             <p className="text-xs text-muted-foreground">Best Month</p>
           </div>
@@ -94,15 +89,15 @@ export const HistoricalTrendsSection = ({ trends }: HistoricalTrendsSectionProps
 
         {/* Score Trend Chart */}
         <div>
-          <h4 className="text-sm font-medium mb-3">Score Trends</h4>
+          <h4 className="text-sm font-medium mb-3">Monthly Score Trend</h4>
           <ScoreTrendChart dataPoints={trends.dataPoints} />
         </div>
 
         {/* Two Column Layout for Charts */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Incentive History */}
+          {/* Payout Band History */}
           <div>
-            <h4 className="text-sm font-medium mb-3">Incentive History</h4>
+            <h4 className="text-sm font-medium mb-3">Payout Band History</h4>
             <IncentiveHistoryChart dataPoints={trends.dataPoints} />
           </div>
 
@@ -123,8 +118,8 @@ export const HistoricalTrendsSection = ({ trends }: HistoricalTrendsSectionProps
             {trends.trend === 'improving' && (
               <>
                 <li>• Your scores have been consistently improving over the past 3 months</li>
-                <li>• Property Score average is {trends.averagePropertyScore} - great trajectory!</li>
-                <li>• Keep focusing on Financial Discipline to maintain momentum</li>
+                <li>• Average score of {trends.averagePropertyScore} shows strong performance</li>
+                <li>• Keep focusing on Financial Discipline to reach consistent 100% payout</li>
               </>
             )}
             {trends.trend === 'declining' && (
@@ -137,8 +132,8 @@ export const HistoricalTrendsSection = ({ trends }: HistoricalTrendsSectionProps
             {trends.trend === 'stable' && (
               <>
                 <li>• Performance has been consistent - aim for the next level</li>
-                <li>• Small improvements in each pillar can boost your overall ranking</li>
-                <li>• Your average of {trends.averageTotalScore} is solid - push for 160+</li>
+                <li>• Small improvements in each pillar can boost your payout band</li>
+                <li>• Your average of {trends.averagePropertyScore} is solid - push for 80+</li>
               </>
             )}
           </ul>

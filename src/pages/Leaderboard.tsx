@@ -7,13 +7,13 @@ import { LeaderboardFilters } from '@/components/leaderboard/LeaderboardFilters'
 import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { CityStatsCard } from '@/components/leaderboard/CityStatsCard';
 import { allPMs, cityStats } from '@/data/leaderboardData';
-import { LeaderboardFilters as FiltersType, ScoreType } from '@/types/leaderboard';
+import { LeaderboardFilters as FiltersType } from '@/types/leaderboard';
 
 export default function Leaderboard() {
   const [filters, setFilters] = useState<FiltersType>({
     city: null,
     zone: null,
-    scoreType: 'total',
+    scoreType: 'property',
     incentiveStatus: 'all',
     searchQuery: '',
   });
@@ -41,17 +41,8 @@ export default function Leaderboard() {
       );
     }
 
-    // Sort by selected score type
-    result.sort((a, b) => {
-      switch (filters.scoreType) {
-        case 'property':
-          return b.propertyScore - a.propertyScore;
-        case 'revenue':
-          return b.revenueScore - a.revenueScore;
-        default:
-          return b.totalScore - a.totalScore;
-      }
-    });
+    // Sort by property score (only score type now)
+    result.sort((a, b) => b.propertyScore - a.propertyScore);
 
     // Recalculate ranks for filtered list
     return result.map((pm, index) => ({
@@ -77,8 +68,6 @@ export default function Leaderboard() {
     return {
       totalPMs: allPMs.length,
       avgPropertyScore: Math.round(allPMs.reduce((sum, pm) => sum + pm.propertyScore, 0) / allPMs.length * 10) / 10,
-      avgRevenueScore: Math.round(allPMs.reduce((sum, pm) => sum + pm.revenueScore, 0) / allPMs.length * 10) / 10,
-      avgTotalScore: Math.round(allPMs.reduce((sum, pm) => sum + pm.totalScore, 0) / allPMs.length * 10) / 10,
       eligiblePercent: Math.round(eligible / allPMs.length * 100),
     };
   }, []);
@@ -106,19 +95,15 @@ export default function Leaderboard() {
               </div>
             </div>
 
-            {/* Quick Stats */}
+            {/* Quick Stats - Simplified */}
             <div className="hidden md:flex items-center gap-6">
               <div className="text-center">
                 <p className="text-xl font-bold text-primary">{companyStats.avgPropertyScore}</p>
-                <p className="text-xs text-muted-foreground">Avg Property</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xl font-bold">{companyStats.avgRevenueScore}</p>
-                <p className="text-xs text-muted-foreground">Avg Revenue</p>
+                <p className="text-xs text-muted-foreground">Avg Score</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-bold text-success">{companyStats.eligiblePercent}%</p>
-                <p className="text-xs text-muted-foreground">Eligible</p>
+                <p className="text-xs text-muted-foreground">100% Payout</p>
               </div>
             </div>
           </div>
@@ -153,7 +138,6 @@ export default function Leaderboard() {
             
             <LeaderboardTable 
               entries={filteredAndSortedPMs}
-              scoreType={filters.scoreType}
               cityFilter={filters.city}
               zoneFilter={filters.zone}
             />

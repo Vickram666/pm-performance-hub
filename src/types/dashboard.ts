@@ -6,8 +6,6 @@ export interface PMProfile {
   city: string;
   zone: string;
   portfolioSize: number;
-  salary: number;
-  mappedRevenue: number;
 }
 
 export interface OperationsMetrics {
@@ -48,21 +46,30 @@ export interface PropertyScore {
   adjustedScore: number;
 }
 
-export interface RevenueScore {
-  revenueAchieved: number;
-  revenueMapped: number;
-  salaryMultiple: number;
-  slabAchieved: string;
-  score: number; // max 100
-}
+// Payout band based on Final Monthly Score (Avg Property Health Score)
+export type PayoutBand = '100%' | '75%' | '50%' | 'nil';
 
-export interface IncentiveCalculation {
-  baseIncentivePercent: number;
-  baseIncentiveAmount: number;
-  releasePercent: number;
-  finalPayableAmount: number;
+export interface IncentiveEligibility {
+  finalMonthlyScore: number; // 0-100 (avg property health score)
+  payoutBand: PayoutBand;
   isBlocked: boolean;
   blockReason?: string;
+}
+
+// Get payout band from score
+export function getPayoutBand(score: number): PayoutBand {
+  if (score >= 80) return '100%';
+  if (score >= 70) return '75%';
+  if (score >= 60) return '50%';
+  return 'nil';
+}
+
+// Get eligibility status from payout band
+export function getEligibilityFromBand(band: PayoutBand, isBlocked: boolean): EligibilityStatus {
+  if (isBlocked) return 'blocked';
+  if (band === '100%') return 'eligible';
+  if (band === '75%' || band === '50%') return 'partial';
+  return 'blocked';
 }
 
 export type EligibilityStatus = 'eligible' | 'partial' | 'blocked';
@@ -90,10 +97,9 @@ export interface MonthlyData {
   year: number;
   profile: PMProfile;
   propertyScore: PropertyScore;
-  revenueScore: RevenueScore;
-  totalScore: number;
+  finalMonthlyScore: number; // Avg property health score (0-100)
   eligibilityStatus: EligibilityStatus;
-  incentive: IncentiveCalculation;
+  incentiveEligibility: IncentiveEligibility;
   awards: Award[];
   coachingSuggestions: CoachingSuggestion[];
 }
@@ -101,10 +107,8 @@ export interface MonthlyData {
 // Historical Trend Types
 export interface HistoricalDataPoint {
   month: string;
-  propertyScore: number;
-  revenueScore: number;
-  totalScore: number;
-  incentiveAmount: number;
+  propertyScore: number; // Final Monthly Score (0-100)
+  payoutBand: PayoutBand;
   eligibilityStatus: EligibilityStatus;
   operationsScore: number;
   financialScore: number;
@@ -115,9 +119,6 @@ export interface HistoricalDataPoint {
 export interface HistoricalTrends {
   dataPoints: HistoricalDataPoint[];
   averagePropertyScore: number;
-  averageRevenueScore: number;
-  averageTotalScore: number;
-  totalIncentiveEarned: number;
   bestMonth: string;
   worstMonth: string;
   trend: 'improving' | 'declining' | 'stable';

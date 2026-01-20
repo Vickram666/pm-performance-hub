@@ -1,13 +1,14 @@
 // Leaderboard Data Types
 
+import { PayoutBand } from './dashboard';
+
 export interface PMLeaderboardEntry {
   id: string;
   name: string;
   city: string;
   zone: string;
-  propertyScore: number;
-  revenueScore: number;
-  totalScore: number;
+  propertyScore: number; // Final Monthly Score (avg property health, 0-100)
+  payoutBand: PayoutBand;
   incentiveStatus: 'eligible' | 'partial' | 'blocked';
   portfolioSize: number;
   rank?: number;
@@ -17,8 +18,6 @@ export interface PMLeaderboardEntry {
 export interface CityStats {
   city: string;
   avgPropertyScore: number;
-  avgRevenueScore: number;
-  avgTotalScore: number;
   pmCount: number;
   eligiblePercent: number;
   zones: ZoneStats[];
@@ -27,13 +26,11 @@ export interface CityStats {
 export interface ZoneStats {
   zone: string;
   avgPropertyScore: number;
-  avgRevenueScore: number;
-  avgTotalScore: number;
   pmCount: number;
   eligiblePercent: number;
 }
 
-export type ScoreType = 'total' | 'property' | 'revenue';
+export type ScoreType = 'property'; // Only property score now
 export type IncentiveFilter = 'all' | 'eligible' | 'partial' | 'blocked';
 
 export interface LeaderboardFilters {

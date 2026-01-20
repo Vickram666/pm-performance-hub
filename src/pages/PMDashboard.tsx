@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { HeaderSummary } from '@/components/dashboard/HeaderSummary';
 import { PropertyScoreSection } from '@/components/dashboard/PropertyScoreSection';
 import { MedianNormalization } from '@/components/dashboard/MedianNormalization';
-import { RevenueSection } from '@/components/dashboard/RevenueSection';
 import { IncentiveSection } from '@/components/dashboard/IncentiveSection';
 import { CoachingSection } from '@/components/dashboard/CoachingSection';
 import { AwardsSection } from '@/components/dashboard/AwardsSection';
@@ -62,9 +61,8 @@ export default function PMDashboard() {
       {/* Sticky Header */}
       <HeaderSummary
         profile={data.profile}
-        adjustedPropertyScore={data.propertyScore.adjustedScore}
-        revenueScore={data.revenueScore.score}
-        totalScore={data.totalScore}
+        finalMonthlyScore={data.finalMonthlyScore}
+        payoutBand={data.incentiveEligibility.payoutBand}
         eligibilityStatus={data.eligibilityStatus}
         selectedMonth={selectedMonth}
         onMonthChange={setSelectedMonth}
@@ -78,18 +76,11 @@ export default function PMDashboard() {
         {/* Median Normalization */}
         <MedianNormalization propertyScore={data.propertyScore} />
 
-        {/* Revenue Section */}
-        <RevenueSection 
-          revenueScore={data.revenueScore} 
-          salary={data.profile.salary} 
-        />
-
-        {/* Incentive Calculation */}
+        {/* Incentive Eligibility */}
         <IncentiveSection
-          incentive={data.incentive}
-          adjustedPropertyScore={data.propertyScore.adjustedScore}
-          mappedRevenue={data.profile.mappedRevenue}
+          incentiveEligibility={data.incentiveEligibility}
           eligibilityStatus={data.eligibilityStatus}
+          coachingSuggestions={data.coachingSuggestions}
         />
 
         {/* Coaching Suggestions */}
