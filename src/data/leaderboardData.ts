@@ -1,4 +1,5 @@
 import { PMLeaderboardEntry, CityStats } from '@/types/leaderboard';
+import { getPayoutBand, getEligibilityFromBand, PayoutBand } from '@/types/dashboard';
 
 const cities = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad', 'Pune'];
 const zones = ['North', 'South', 'East', 'West'];
@@ -26,14 +27,16 @@ function getRandomNumber(min: number, max: number): number {
 }
 
 function generatePMData(index: number): PMLeaderboardEntry {
-  const propertyScore = getRandomNumber(35, 95);
-  const revenueScore = getRandomNumber(0, 100);
-  const totalScore = Math.round((propertyScore + revenueScore) * 10) / 10;
-  
+  // Property score is the Final Monthly Score (0-100)
+  const propertyScore = getRandomNumber(45, 95);
+  const payoutBand = getPayoutBand(propertyScore);
+  const eligibilityStatus = getEligibilityFromBand(payoutBand, false);
+
+  // Map eligibility status to incentive status
   let incentiveStatus: 'eligible' | 'partial' | 'blocked';
-  if (propertyScore >= 80 && revenueScore >= 50) {
+  if (payoutBand === '100%') {
     incentiveStatus = 'eligible';
-  } else if (propertyScore >= 50 || revenueScore >= 50) {
+  } else if (payoutBand === '75%' || payoutBand === '50%') {
     incentiveStatus = 'partial';
   } else {
     incentiveStatus = 'blocked';
@@ -45,17 +48,16 @@ function generatePMData(index: number): PMLeaderboardEntry {
     city: getRandomElement(cities),
     zone: getRandomElement(zones),
     propertyScore,
-    revenueScore,
-    totalScore,
+    payoutBand,
     incentiveStatus,
     portfolioSize: Math.floor(Math.random() * 30) + 110, // 110-140 properties
   };
 }
 
-// Generate 120 PMs
+// Generate 120 PMs sorted by property score
 export const allPMs: PMLeaderboardEntry[] = Array.from({ length: 120 }, (_, i) => 
   generatePMData(i)
-).sort((a, b) => b.totalScore - a.totalScore).map((pm, index) => ({
+).sort((a, b) => b.propertyScore - a.propertyScore).map((pm, index) => ({
   ...pm,
   rank: index + 1,
   percentile: Math.round((1 - index / 120) * 100),
@@ -71,8 +73,6 @@ export const cityStats: CityStats[] = cities.map(city => {
       return {
         zone,
         avgPropertyScore: 0,
-        avgRevenueScore: 0,
-        avgTotalScore: 0,
         pmCount: 0,
         eligiblePercent: 0,
       };
@@ -80,8 +80,6 @@ export const cityStats: CityStats[] = cities.map(city => {
     return {
       zone,
       avgPropertyScore: Math.round(zonePMs.reduce((sum, pm) => sum + pm.propertyScore, 0) / zonePMs.length * 10) / 10,
-      avgRevenueScore: Math.round(zonePMs.reduce((sum, pm) => sum + pm.revenueScore, 0) / zonePMs.length * 10) / 10,
-      avgTotalScore: Math.round(zonePMs.reduce((sum, pm) => sum + pm.totalScore, 0) / zonePMs.length * 10) / 10,
       pmCount: zonePMs.length,
       eligiblePercent: Math.round(zonePMs.filter(pm => pm.incentiveStatus === 'eligible').length / zonePMs.length * 100),
     };
@@ -90,8 +88,6 @@ export const cityStats: CityStats[] = cities.map(city => {
   return {
     city,
     avgPropertyScore: cityPMs.length > 0 ? Math.round(cityPMs.reduce((sum, pm) => sum + pm.propertyScore, 0) / cityPMs.length * 10) / 10 : 0,
-    avgRevenueScore: cityPMs.length > 0 ? Math.round(cityPMs.reduce((sum, pm) => sum + pm.revenueScore, 0) / cityPMs.length * 10) / 10 : 0,
-    avgTotalScore: cityPMs.length > 0 ? Math.round(cityPMs.reduce((sum, pm) => sum + pm.totalScore, 0) / cityPMs.length * 10) / 10 : 0,
     pmCount: cityPMs.length,
     eligiblePercent: cityPMs.length > 0 ? Math.round(cityPMs.filter(pm => pm.incentiveStatus === 'eligible').length / cityPMs.length * 100) : 0,
     zones: zoneStats,

@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { HistoricalDataPoint } from '@/types/dashboard';
 
 interface ScoreTrendChartProps {
@@ -20,10 +20,14 @@ export const ScoreTrendChart = ({ dataPoints }: ScoreTrendChartProps) => {
             className="text-muted-foreground"
           />
           <YAxis 
-            domain={[0, 200]}
+            domain={[0, 100]}
             tick={{ fontSize: 11 }}
             className="text-muted-foreground"
           />
+          {/* Reference lines for payout thresholds */}
+          <ReferenceLine y={80} stroke="hsl(142 76% 36%)" strokeDasharray="5 5" label={{ value: '100% payout', position: 'right', fontSize: 10 }} />
+          <ReferenceLine y={70} stroke="hsl(38 92% 50%)" strokeDasharray="5 5" label={{ value: '75%', position: 'right', fontSize: 10 }} />
+          <ReferenceLine y={60} stroke="hsl(38 92% 50%)" strokeDasharray="5 5" label={{ value: '50%', position: 'right', fontSize: 10 }} />
           <Tooltip
             contentStyle={{
               backgroundColor: 'hsl(var(--card))',
@@ -32,46 +36,21 @@ export const ScoreTrendChart = ({ dataPoints }: ScoreTrendChartProps) => {
               fontSize: '12px',
             }}
             formatter={(value: number, name: string) => {
-              const labels: Record<string, string> = {
-                totalScore: 'Total Score',
-                propertyScore: 'Property Score',
-                revenueScore: 'Revenue Score',
-              };
-              return [value.toFixed(1), labels[name] || name];
+              return [value.toFixed(1), 'Monthly Score'];
             }}
           />
           <Legend 
             wrapperStyle={{ fontSize: '12px' }}
-            formatter={(value) => {
-              const labels: Record<string, string> = {
-                totalScore: 'Total Score',
-                propertyScore: 'Property Score',
-                revenueScore: 'Revenue Score',
-              };
-              return labels[value] || value;
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="totalScore"
-            stroke="hsl(var(--primary))"
-            strokeWidth={2}
-            dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-            activeDot={{ r: 6 }}
+            formatter={() => 'Final Monthly Score'}
           />
           <Line
             type="monotone"
             dataKey="propertyScore"
-            stroke="hsl(142 76% 36%)"
-            strokeWidth={2}
-            dot={{ fill: 'hsl(142 76% 36%)', r: 3 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="revenueScore"
-            stroke="hsl(217 91% 60%)"
-            strokeWidth={2}
-            dot={{ fill: 'hsl(217 91% 60%)', r: 3 }}
+            name="propertyScore"
+            stroke="hsl(var(--primary))"
+            strokeWidth={3}
+            dot={{ fill: 'hsl(var(--primary))', r: 5 }}
+            activeDot={{ r: 7 }}
           />
         </LineChart>
       </ResponsiveContainer>

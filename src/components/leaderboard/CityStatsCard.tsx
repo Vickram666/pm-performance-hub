@@ -1,4 +1,4 @@
-import { Building2, Users, TrendingUp, CheckCircle } from 'lucide-react';
+import { Building2, Users, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { CityStats, ZoneStats } from '@/types/leaderboard';
@@ -20,26 +20,18 @@ export function CityStatsCard({ stats, onZoneClick, selectedZone }: CityStatsCar
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Summary Stats - Simplified */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="text-center p-3 bg-background/60 rounded-lg">
             <p className="text-2xl font-bold text-primary">{stats.avgPropertyScore}</p>
-            <p className="text-xs text-muted-foreground">Avg Property</p>
-          </div>
-          <div className="text-center p-3 bg-background/60 rounded-lg">
-            <p className="text-2xl font-bold text-accent-foreground">{stats.avgRevenueScore}</p>
-            <p className="text-xs text-muted-foreground">Avg Revenue</p>
-          </div>
-          <div className="text-center p-3 bg-background/60 rounded-lg">
-            <p className="text-2xl font-bold">{stats.avgTotalScore}</p>
-            <p className="text-xs text-muted-foreground">Avg Total</p>
+            <p className="text-xs text-muted-foreground">Avg Score</p>
           </div>
           <div className="text-center p-3 bg-background/60 rounded-lg">
             <div className="flex items-center justify-center gap-1">
               <CheckCircle className="h-4 w-4 text-success" />
               <p className="text-2xl font-bold text-success">{stats.eligiblePercent}%</p>
             </div>
-            <p className="text-xs text-muted-foreground">Eligible</p>
+            <p className="text-xs text-muted-foreground">100% Payout</p>
           </div>
         </div>
 
@@ -74,11 +66,14 @@ function ZoneMiniCard({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const scoreColor = zone.avgTotalScore >= 140 
+  // Color based on score bands (80+, 70-79, 60-69, <60)
+  const scoreColor = zone.avgPropertyScore >= 80 
     ? 'text-success' 
-    : zone.avgTotalScore >= 100 
+    : zone.avgPropertyScore >= 70 
       ? 'text-warning' 
-      : 'text-destructive';
+      : zone.avgPropertyScore >= 60
+        ? 'text-warning'
+        : 'text-destructive';
 
   return (
     <div 
@@ -93,13 +88,13 @@ function ZoneMiniCard({
       <div className="flex items-center justify-between mb-2">
         <span className="font-medium">{zone.zone}</span>
         <span className={cn("text-sm font-bold tabular-nums", scoreColor)}>
-          {zone.avgTotalScore}
+          {zone.avgPropertyScore}
         </span>
       </div>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>{zone.pmCount} PMs</span>
         <span>•</span>
-        <span className="text-success">{zone.eligiblePercent}% eligible</span>
+        <span className="text-success">{zone.eligiblePercent}% at 100%</span>
       </div>
       <Progress 
         value={zone.eligiblePercent} 

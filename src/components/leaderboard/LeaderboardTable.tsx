@@ -9,17 +9,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PMLeaderboardEntry, ScoreType } from '@/types/leaderboard';
+import { PMLeaderboardEntry } from '@/types/leaderboard';
 import { cn } from '@/lib/utils';
 
 interface LeaderboardTableProps {
   entries: PMLeaderboardEntry[];
-  scoreType: ScoreType;
   cityFilter: string | null;
   zoneFilter: string | null;
 }
 
-export function LeaderboardTable({ entries, scoreType, cityFilter, zoneFilter }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, cityFilter, zoneFilter }: LeaderboardTableProps) {
   const navigate = useNavigate();
 
   const getPercentileStyle = (percentile: number | undefined) => {
@@ -29,14 +28,7 @@ export function LeaderboardTable({ entries, scoreType, cityFilter, zoneFilter }:
     return 'text-destructive bg-destructive/10';
   };
 
-  const getPercentileIcon = (percentile: number | undefined) => {
-    if (!percentile) return <Minus className="h-4 w-4" />;
-    if (percentile >= 80) return <TrendingUp className="h-4 w-4" />;
-    if (percentile >= 20) return <Minus className="h-4 w-4" />;
-    return <TrendingDown className="h-4 w-4" />;
-  };
-
-  const getIncentiveVariant = (status: string) => {
+  const getPayoutBadgeVariant = (status: string, payoutBand: string) => {
     switch (status) {
       case 'eligible':
         return 'default';
@@ -49,23 +41,18 @@ export function LeaderboardTable({ entries, scoreType, cityFilter, zoneFilter }:
     }
   };
 
+  const getPayoutLabel = (status: string, payoutBand: string) => {
+    if (status === 'eligible') return '100%';
+    if (status === 'partial') return payoutBand;
+    return 'Nil';
+  };
+
   const handleRowClick = (pm: PMLeaderboardEntry) => {
     const params = new URLSearchParams();
     params.set('pmId', pm.id);
     if (cityFilter) params.set('city', cityFilter);
     if (zoneFilter) params.set('zone', zoneFilter);
     navigate(`/pm/${pm.id}?${params.toString()}`);
-  };
-
-  const getSortedScore = (pm: PMLeaderboardEntry) => {
-    switch (scoreType) {
-      case 'property':
-        return pm.propertyScore;
-      case 'revenue':
-        return pm.revenueScore;
-      default:
-        return pm.totalScore;
-    }
   };
 
   if (entries.length === 0) {
@@ -87,12 +74,10 @@ export function LeaderboardTable({ entries, scoreType, cityFilter, zoneFilter }:
             <TableHead>PM Name</TableHead>
             <TableHead>City</TableHead>
             <TableHead>Zone</TableHead>
-            <TableHead className="text-right">Property</TableHead>
-            <TableHead className="text-right">Revenue</TableHead>
-            <TableHead className={cn("text-right font-bold", scoreType === 'total' && "bg-primary/5")}>
-              Total
+            <TableHead className="text-right font-bold bg-primary/5">
+              Monthly Score
             </TableHead>
-            <TableHead className="text-center">Status</TableHead>
+            <TableHead className="text-center">Payout</TableHead>
             <TableHead className="text-right">Portfolio</TableHead>
           </TableRow>
         </TableHeader>
@@ -126,28 +111,12 @@ export function LeaderboardTable({ entries, scoreType, cityFilter, zoneFilter }:
               </TableCell>
               <TableCell>{pm.city}</TableCell>
               <TableCell>{pm.zone}</TableCell>
-              <TableCell className={cn(
-                "text-right tabular-nums",
-                scoreType === 'property' && "font-bold bg-primary/5"
-              )}>
+              <TableCell className="text-right tabular-nums font-bold bg-primary/5">
                 {pm.propertyScore}
               </TableCell>
-              <TableCell className={cn(
-                "text-right tabular-nums",
-                scoreType === 'revenue' && "font-bold bg-primary/5"
-              )}>
-                {pm.revenueScore}
-              </TableCell>
-              <TableCell className={cn(
-                "text-right tabular-nums font-semibold",
-                scoreType === 'total' && "bg-primary/5"
-              )}>
-                {pm.totalScore}
-              </TableCell>
               <TableCell className="text-center">
-                <Badge variant={getIncentiveVariant(pm.incentiveStatus)}>
-                  {pm.incentiveStatus === 'eligible' ? 'Eligible' : 
-                   pm.incentiveStatus === 'partial' ? 'Partial' : 'Blocked'}
+                <Badge variant={getPayoutBadgeVariant(pm.incentiveStatus, pm.payoutBand)}>
+                  {getPayoutLabel(pm.incentiveStatus, pm.payoutBand)}
                 </Badge>
               </TableCell>
               <TableCell className="text-right tabular-nums">

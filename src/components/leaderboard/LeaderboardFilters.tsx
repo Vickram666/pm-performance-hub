@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { LeaderboardFilters as FiltersType, ScoreType, IncentiveFilter } from '@/types/leaderboard';
+import { LeaderboardFilters as FiltersType, IncentiveFilter } from '@/types/leaderboard';
 import { getCitiesWithPMs, getZonesForCity } from '@/data/leaderboardData';
 
 interface LeaderboardFiltersProps {
@@ -31,13 +31,6 @@ export function LeaderboardFilters({ filters, onFiltersChange }: LeaderboardFilt
     onFiltersChange({
       ...filters,
       zone: value === 'all' ? null : value,
-    });
-  };
-
-  const handleScoreTypeChange = (value: ScoreType) => {
-    onFiltersChange({
-      ...filters,
-      scoreType: value,
     });
   };
 
@@ -102,28 +95,16 @@ export function LeaderboardFilters({ filters, onFiltersChange }: LeaderboardFilt
         </SelectContent>
       </Select>
 
-      {/* Score Type */}
-      <Select value={filters.scoreType} onValueChange={handleScoreTypeChange}>
-        <SelectTrigger className="w-[150px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="total">Total Score</SelectItem>
-          <SelectItem value="property">Property Score</SelectItem>
-          <SelectItem value="revenue">Revenue Score</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {/* Incentive Status */}
+      {/* Payout Status Filter */}
       <Select value={filters.incentiveStatus} onValueChange={handleIncentiveChange}>
         <SelectTrigger className="w-[150px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="eligible">Eligible</SelectItem>
-          <SelectItem value="partial">Partial</SelectItem>
-          <SelectItem value="blocked">Blocked</SelectItem>
+          <SelectItem value="all">All Payout Status</SelectItem>
+          <SelectItem value="eligible">100% Payout</SelectItem>
+          <SelectItem value="partial">75% / 50% Payout</SelectItem>
+          <SelectItem value="blocked">No Incentive</SelectItem>
         </SelectContent>
       </Select>
     </div>
