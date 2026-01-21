@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Leaderboard from "./pages/Leaderboard";
 import PMDashboard from "./pages/PMDashboard";
 import PropertyList from "./pages/PropertyList";
+import RenewalTracker from "./pages/RenewalTracker";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/pm/:pmId" element={<PMDashboard />} />
           <Route path="/properties" element={<PropertyList />} />
+          <Route path="/renewals" element={<RenewalTracker />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

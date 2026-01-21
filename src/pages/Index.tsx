@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, LayoutList } from 'lucide-react';
+import { Trophy, LayoutList, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HeaderSummary } from '@/components/dashboard/HeaderSummary';
 import { PropertyScoreSection } from '@/components/dashboard/PropertyScoreSection';
@@ -20,6 +20,12 @@ const Index = () => {
       {/* Quick Navigation */}
       <div className="bg-card border-b">
         <div className="container py-2 flex items-center justify-end gap-2">
+          <Link to="/renewals">
+            <Button variant="outline" size="sm" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Renewal Tracker
+            </Button>
+          </Link>
           <Link to="/properties">
             <Button variant="outline" size="sm" className="gap-2">
               <LayoutList className="h-4 w-4" />
