@@ -4,7 +4,7 @@ import { Trophy, LayoutList, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HeaderSummary } from '@/components/dashboard/HeaderSummary';
 import { PropertyScoreSection } from '@/components/dashboard/PropertyScoreSection';
-import { MedianNormalization } from '@/components/dashboard/MedianNormalization';
+import { ScoreImpactPanel, generateScoreImpacts, generateQuickWins } from '@/components/dashboard/ScoreImpactPanel';
 import { IncentiveSection } from '@/components/dashboard/IncentiveSection';
 import { CoachingSection } from '@/components/dashboard/CoachingSection';
 import { AwardsSection } from '@/components/dashboard/AwardsSection';
@@ -14,6 +14,15 @@ import { mockPMData, mockHistoricalTrends } from '@/data/mockData';
 const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState('January 2025');
   const data = mockPMData;
+  
+  // Generate score impacts and quick wins from property score data
+  const scoreImpacts = generateScoreImpacts(data.propertyScore);
+  const quickWins = generateQuickWins(scoreImpacts);
+  
+  // Get previous month score from historical data
+  const previousScore = mockHistoricalTrends.dataPoints.length > 1 
+    ? mockHistoricalTrends.dataPoints[mockHistoricalTrends.dataPoints.length - 2].propertyScore 
+    : data.finalMonthlyScore;
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +63,15 @@ const Index = () => {
       {/* Main Content */}
       <main className="container py-6 space-y-6">
         <PropertyScoreSection propertyScore={data.propertyScore} />
-        <MedianNormalization propertyScore={data.propertyScore} />
+        
+        {/* Score Impact Panel - Replaces Median Normalization */}
+        <ScoreImpactPanel
+          currentScore={data.finalMonthlyScore}
+          previousScore={previousScore}
+          payoutBand={data.incentiveEligibility.payoutBand}
+          scoreImpacts={scoreImpacts}
+          quickWins={quickWins}
+        />
         
         {/* Incentive Eligibility - No rupee amounts */}
         <IncentiveSection

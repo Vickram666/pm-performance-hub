@@ -4,7 +4,7 @@ import { ArrowLeft, LayoutList, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HeaderSummary } from '@/components/dashboard/HeaderSummary';
 import { PropertyScoreSection } from '@/components/dashboard/PropertyScoreSection';
-import { MedianNormalization } from '@/components/dashboard/MedianNormalization';
+import { ScoreImpactPanel, generateScoreImpacts, generateQuickWins } from '@/components/dashboard/ScoreImpactPanel';
 import { IncentiveSection } from '@/components/dashboard/IncentiveSection';
 import { CoachingSection } from '@/components/dashboard/CoachingSection';
 import { AwardsSection } from '@/components/dashboard/AwardsSection';
@@ -19,6 +19,15 @@ export default function PMDashboard() {
   
   const [selectedMonth, setSelectedMonth] = useState('January 2025');
   const data = mockPMData;
+
+  // Generate score impacts and quick wins from property score data
+  const scoreImpacts = generateScoreImpacts(data.propertyScore);
+  const quickWins = generateQuickWins(scoreImpacts);
+  
+  // Get previous month score from historical data
+  const previousScore = mockHistoricalTrends.dataPoints.length > 1 
+    ? mockHistoricalTrends.dataPoints[mockHistoricalTrends.dataPoints.length - 2].propertyScore 
+    : data.finalMonthlyScore;
 
   // Build back link with preserved filters
   const backLink = cityFilter || zoneFilter 
@@ -73,8 +82,14 @@ export default function PMDashboard() {
         {/* Property Score Section */}
         <PropertyScoreSection propertyScore={data.propertyScore} />
 
-        {/* Median Normalization */}
-        <MedianNormalization propertyScore={data.propertyScore} />
+        {/* Score Impact Panel - Replaces Median Normalization */}
+        <ScoreImpactPanel
+          currentScore={data.finalMonthlyScore}
+          previousScore={previousScore}
+          payoutBand={data.incentiveEligibility.payoutBand}
+          scoreImpacts={scoreImpacts}
+          quickWins={quickWins}
+        />
 
         {/* Incentive Eligibility */}
         <IncentiveSection
