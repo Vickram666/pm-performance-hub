@@ -8,6 +8,8 @@ import {
   CityRenewalStats,
   calculateRiskLevel,
   calculateScoreImpact,
+  calculateRenewalOpenDate,
+  calculateLockDeadline,
   RENEWAL_STAGE_ORDER
 } from '@/types/renewal';
 import { addDays, differenceInDays, format, subDays } from 'date-fns';
@@ -27,6 +29,9 @@ const propertyNames = [
   'Hiranandani Gardens', 'Kalpataru Vista', 'Rustomjee Seasons', 'Shapoorji Pallonji'
 ];
 
+// Notice periods: 30, 60, or 90 days
+const noticePeriods = [30, 60, 90];
+
 function getRandomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -37,27 +42,36 @@ function getRandomInt(min: number, max: number): number {
 
 function generateRenewalRecord(index: number): RenewalRecord {
   const today = new Date();
-  const daysToExpiry = getRandomInt(-5, 90); // Some already expired
+  const daysToExpiry = getRandomInt(-5, 120); // Extended range for notice-period awareness
   const leaseEndDate = addDays(today, daysToExpiry);
   const leaseStartDate = subDays(leaseEndDate, 365);
+  
+  // Assign notice period - varies by property
+  const noticePeriod = getRandomElement(noticePeriods);
+  const renewalOpenDate = calculateRenewalOpenDate(leaseEndDate, noticePeriod);
+  const lockDeadline = calculateLockDeadline(leaseEndDate, noticePeriod);
   
   const pmIndex = index % pmNames.length;
   const pmName = pmNames[pmIndex];
   const pmId = `PM${String(pmIndex + 1).padStart(3, '0')}`;
   
-  // Determine stage based on days to expiry
+  // Determine stage based on days to expiry and notice period
   let currentStage: RenewalStage;
   const rand = Math.random();
   
+  const lockDays = noticePeriod >= 60 ? 30 : 15;
+  const ackDays = noticePeriod >= 60 ? 45 : 30;
+  const initiationDays = noticePeriod + 30;
+  
   if (daysToExpiry < 0) {
     currentStage = rand > 0.3 ? 'renewal_completed' : 'renewal_failed';
-  } else if (daysToExpiry <= 15) {
+  } else if (daysToExpiry <= lockDays) {
     const stages: RenewalStage[] = ['pms_renewed', 'tcf_completed', 'agreement_signed', 'renewal_completed', 'renewal_failed'];
     currentStage = getRandomElement(stages);
-  } else if (daysToExpiry <= 30) {
+  } else if (daysToExpiry <= ackDays) {
     const stages: RenewalStage[] = ['agreement_sent', 'agreement_signed', 'owner_acknowledgement_pending', 'negotiation_in_progress'];
     currentStage = getRandomElement(stages);
-  } else if (daysToExpiry <= 45) {
+  } else if (daysToExpiry <= initiationDays) {
     const stages: RenewalStage[] = ['renewal_initiated', 'negotiation_in_progress', 'owner_acknowledgement_pending', 'not_started'];
     currentStage = getRandomElement(stages);
   } else {
@@ -66,7 +80,7 @@ function generateRenewalRecord(index: number): RenewalRecord {
   }
   
   const hasOwnerAck = RENEWAL_STAGE_ORDER.indexOf(currentStage) >= RENEWAL_STAGE_ORDER.indexOf('agreement_sent');
-  const riskLevel = calculateRiskLevel(daysToExpiry, currentStage, hasOwnerAck);
+  const riskLevel = calculateRiskLevel(daysToExpiry, currentStage, hasOwnerAck, noticePeriod);
   const scoreImpact = calculateScoreImpact(daysToExpiry, currentStage, riskLevel);
   
   const currentRent = getRandomInt(15000, 80000);
@@ -89,6 +103,9 @@ function generateRenewalRecord(index: number): RenewalRecord {
       leaseStartDate: format(leaseStartDate, 'yyyy-MM-dd'),
       leaseEndDate: format(leaseEndDate, 'yyyy-MM-dd'),
       daysToExpiry: Math.max(0, daysToExpiry),
+      noticePeriod,
+      renewalOpenDate: format(renewalOpenDate, 'yyyy-MM-dd'),
+      lockDeadline: format(lockDeadline, 'yyyy-MM-dd'),
       currentRent,
       proposedRent,
       pmsFee: Math.round(currentRent * 0.05),
@@ -107,9 +124,9 @@ function generateRenewalRecord(index: number): RenewalRecord {
       otpVerified: hasOwnerAck,
       consentId: hasOwnerAck ? `CON${Date.now()}${index}` : undefined,
     },
-    alerts: generateAlerts(daysToExpiry, currentStage, riskLevel),
+    alerts: generateAlerts(daysToExpiry, currentStage, riskLevel, noticePeriod),
     scoreImpact,
-    createdAt: format(subDays(leaseEndDate, 60), 'yyyy-MM-dd'),
+    createdAt: format(subDays(leaseEndDate, noticePeriod + 30), 'yyyy-MM-dd'),
     updatedAt: format(today, 'yyyy-MM-dd'),
   };
 }
@@ -133,38 +150,42 @@ function generateStageHistory(currentStage: RenewalStage, leaseEndDate: Date) {
   return history;
 }
 
-function generateAlerts(daysToExpiry: number, stage: RenewalStage, riskLevel: string) {
+function generateAlerts(daysToExpiry: number, stage: RenewalStage, riskLevel: string, noticePeriod: number) {
   const alerts = [];
   const today = new Date();
   
-  if (daysToExpiry <= 15 && stage !== 'renewal_completed' && stage !== 'pms_renewed') {
+  const lockDays = noticePeriod >= 60 ? 30 : 15;
+  const ackDays = noticePeriod >= 60 ? 45 : 30;
+  const initiationDays = noticePeriod + 30;
+  
+  if (daysToExpiry <= lockDays && stage !== 'renewal_completed' && stage !== 'pms_renewed') {
     alerts.push({
       id: `ALT${Date.now()}1`,
       type: 'critical' as const,
-      message: 'Red-risk escalation: Renewal not locked with 15 days remaining',
+      message: `Red-risk escalation: Renewal not locked with ${daysToExpiry} days remaining (SLA: ${lockDays} days)`,
       dueDate: format(addDays(today, daysToExpiry), 'yyyy-MM-dd'),
       isRead: false,
       createdAt: format(today, 'yyyy-MM-dd'),
     });
   }
   
-  if (daysToExpiry <= 30 && stage === 'not_started') {
+  if (daysToExpiry <= ackDays && stage === 'not_started') {
     alerts.push({
       id: `ALT${Date.now()}2`,
       type: 'escalation' as const,
-      message: 'Escalation: Renewal not started with 30 days remaining',
+      message: `Escalation: Renewal not started with ${daysToExpiry} days remaining`,
       dueDate: format(addDays(today, daysToExpiry), 'yyyy-MM-dd'),
       isRead: false,
       createdAt: format(today, 'yyyy-MM-dd'),
     });
   }
   
-  if (daysToExpiry <= 45 && daysToExpiry > 30 && stage === 'not_started') {
+  if (daysToExpiry <= initiationDays && daysToExpiry > ackDays && stage === 'not_started') {
     alerts.push({
       id: `ALT${Date.now()}3`,
       type: 'warning' as const,
-      message: 'Start renewal process - 45 days to expiry',
-      dueDate: format(addDays(today, daysToExpiry - 45), 'yyyy-MM-dd'),
+      message: `Start renewal process - ${noticePeriod}-day notice period requires action now`,
+      dueDate: format(addDays(today, daysToExpiry - initiationDays), 'yyyy-MM-dd'),
       isRead: true,
       createdAt: format(subDays(today, 5), 'yyyy-MM-dd'),
     });
