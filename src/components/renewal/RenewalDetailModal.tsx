@@ -20,14 +20,20 @@ import {
   TrendingDown
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { OwnerAcknowledgementFlow } from './OwnerAcknowledgementFlow';
 
 interface RenewalDetailModalProps {
   renewal: RenewalRecord | null;
   open: boolean;
   onClose: () => void;
+  onRenewalUpdate?: (updated: RenewalRecord) => void;
 }
 
-export function RenewalDetailModal({ renewal, open, onClose }: RenewalDetailModalProps) {
+export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate }: RenewalDetailModalProps) {
+  const [ackFlowOpen, setAckFlowOpen] = useState(false);
+
   if (!renewal) return null;
 
   const hasOwnerAck = renewal.ownerAcknowledgement.status === 'accepted';
@@ -186,12 +192,32 @@ export function RenewalDetailModal({ renewal, open, onClose }: RenewalDetailModa
                       <p className="text-sm text-muted-foreground mt-1">
                         Owner acknowledgement is required before sending the agreement.
                       </p>
+
+                      <div className="mt-3">
+                        <Button onClick={() => setAckFlowOpen(true)}>
+                          Simulate Owner Response
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Owner acknowledgement simulation flow */}
+          <OwnerAcknowledgementFlow
+            open={ackFlowOpen}
+            onOpenChange={setAckFlowOpen}
+            renewal={renewal}
+            onComplete={(ack) => {
+              const updated: RenewalRecord = {
+                ...renewal,
+                ownerAcknowledgement: ack,
+              };
+              onRenewalUpdate?.(updated);
+            }}
+          />
 
           {/* Alerts */}
           {renewal.alerts.length > 0 && (
