@@ -27,6 +27,7 @@ export default function RenewalTracker() {
   const pmId = searchParams.get('pmId') || 'PM001';
   
   const [viewMode, setViewMode] = useState<ViewMode>('pm');
+  const [renewals, setRenewals] = useState<RenewalRecord[]>(() => allRenewals);
   const [filters, setFilters] = useState<FiltersType>({
     expiryBucket: 'all',
     searchQuery: '',
@@ -35,12 +36,12 @@ export default function RenewalTracker() {
 
   // Get unique cities and zones
   const cities = useMemo(() => 
-    [...new Set(allRenewals.map(r => r.property.city))].sort(),
-    []
+    [...new Set(renewals.map(r => r.property.city))].sort(),
+    [renewals]
   );
   const zones = useMemo(() => 
-    [...new Set(allRenewals.map(r => r.property.zone))].sort(),
-    []
+    [...new Set(renewals.map(r => r.property.zone))].sort(),
+    [renewals]
   );
 
   // Filter renewals based on view mode
@@ -49,8 +50,8 @@ export default function RenewalTracker() {
     if (viewMode === 'pm') {
       baseFilters.pmId = pmId;
     }
-    return filterRenewals(allRenewals, baseFilters);
-  }, [filters, viewMode, pmId]);
+    return filterRenewals(renewals, baseFilters);
+  }, [filters, viewMode, pmId, renewals]);
 
   // Calculate stats
   const funnelStats = useMemo(() => 
@@ -59,18 +60,18 @@ export default function RenewalTracker() {
   );
 
   const pmSummaries = useMemo(() => 
-    getPMRenewalSummaries(allRenewals),
-    []
+    getPMRenewalSummaries(renewals),
+    [renewals]
   );
 
   const leadershipStats = useMemo(() => 
-    getLeadershipStats(allRenewals),
-    []
+    getLeadershipStats(renewals),
+    [renewals]
   );
 
   const pmActionItems = useMemo(() => 
-    getPMActionItems(allRenewals, pmId),
-    [pmId]
+    getPMActionItems(renewals, pmId),
+    [renewals, pmId]
   );
 
   // Count active filters
@@ -182,6 +183,10 @@ export default function RenewalTracker() {
           renewal={selectedRenewal}
           open={!!selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
+          onRenewalUpdate={(updated) => {
+            setRenewals((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+            setSelectedRenewal(updated);
+          }}
         />
       </main>
     </div>

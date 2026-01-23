@@ -84,6 +84,8 @@ export interface OwnerAcknowledgement {
   consentId?: string;
   otpVerified?: boolean;
   changeRequests?: string;
+  ownerEmail?: string;
+  rejectionReason?: string;
 }
 
 export interface RenewalStatus {
