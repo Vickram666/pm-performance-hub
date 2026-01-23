@@ -105,7 +105,7 @@ export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProp
   // Pillar 2: Financial Discipline (15 points + penalty)
   const financialTotal = financial.paidRentOnTimeScore + financial.latePenalty;
   
-  // Pillar 3: Customer Experience (30 points)
+  // Pillar 3: Customer Experience (20 points)
   const customerTotal = customer.tenantAppReviewScore + customer.ownerAppReviewScore + 
     customer.ownerAppDownload + customer.tenantAppDownload;
   
@@ -212,13 +212,13 @@ export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProp
           )}
         </PillarCard>
 
-        {/* Pillar 3: Customer Experience (30 Points) */}
+        {/* Pillar 3: Customer Experience (20 Points) */}
         <PillarCard 
           title="Customer Experience" 
           icon={Heart}
           color="hsl(var(--pillar-customer))"
           earned={customerTotal}
-          max={30}
+          max={20}
         >
           <MetricRow 
             label="Tenant App Review Score" 
