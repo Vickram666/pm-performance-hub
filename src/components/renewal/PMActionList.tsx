@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RenewalRiskBadge } from './RenewalRiskBadge';
 import { AlertTriangle, ChevronRight, Clock, TrendingDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface PMActionListProps {
   needsActionToday: RenewalRecord[];
@@ -43,35 +42,40 @@ export function PMActionList({ needsActionToday, onRenewalClick }: PMActionListP
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y">
-          {needsActionToday.map(renewal => (
-            <button
-              key={renewal.id}
-              onClick={() => onRenewalClick(renewal)}
-              className="w-full p-4 hover:bg-muted/50 transition-colors text-left flex items-center gap-4"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium truncate">{renewal.property.propertyName}</span>
-                  <RenewalRiskBadge risk={renewal.status.riskLevel} size="sm" showIcon={false} />
+          {needsActionToday.map(renewal => {
+            const impact = renewal.scoreImpact;
+            const hasImpact = impact.currentPoints < 25;
+            
+            return (
+              <button
+                key={renewal.id}
+                onClick={() => onRenewalClick(renewal)}
+                className="w-full p-4 hover:bg-muted/50 transition-colors text-left flex items-center gap-4"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium truncate">{renewal.property.propertyName}</span>
+                    <RenewalRiskBadge risk={renewal.status.riskLevel} size="sm" showIcon={false} />
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <span>{renewal.lease.daysToExpiry} days left</span>
+                    <span>•</span>
+                    <span>{renewal.property.city}</span>
+                    {hasImpact && (
+                      <>
+                        <span>•</span>
+                        <span className="flex items-center text-red-400">
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                          {impact.atRiskMessage}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>{renewal.lease.daysToExpiry} days left</span>
-                  <span>•</span>
-                  <span>{renewal.property.city}</span>
-                  {renewal.scoreImpact !== 0 && (
-                    <>
-                      <span>•</span>
-                      <span className="flex items-center text-red-400">
-                        <TrendingDown className="h-3 w-3 mr-1" />
-                        {renewal.scoreImpact} pts
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          ))}
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

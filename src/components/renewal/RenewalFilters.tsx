@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, X, RotateCcw } from 'lucide-react';
+import { Search, Filter, RotateCcw } from 'lucide-react';
 import { RenewalFilters as FiltersType, RenewalStage, RiskLevel, RENEWAL_STAGE_LABELS } from '@/types/renewal';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -33,9 +33,10 @@ export function RenewalFilters({
   };
 
   const stages: RenewalStage[] = [
-    'not_started', 'renewal_initiated', 'negotiation_in_progress',
-    'owner_acknowledgement_pending', 'agreement_sent', 'agreement_signed',
-    'tcf_completed', 'pms_renewed', 'renewal_completed', 'renewal_failed'
+    'renewal_not_started', 'negotiation_in_progress', 'proposal_sent',
+    'owner_acknowledged', 'agreement_sent', 'agreement_signed',
+    'agreement_uploaded', 'tcf_completed', 'pms_renewed', 
+    'renewal_completed', 'renewal_failed'
   ];
 
   return (
@@ -47,7 +48,7 @@ export function RenewalFilters({
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by property, ID, or PM name..."
+                placeholder="Search by property ID or name..."
                 value={filters.searchQuery || ''}
                 onChange={(e) => onFiltersChange({ ...filters, searchQuery: e.target.value })}
                 className="pl-10"
@@ -79,7 +80,7 @@ export function RenewalFilters({
           {/* Expandable Filters */}
           <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <CollapsibleContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 pt-3 border-t">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-3 border-t">
                 {/* City */}
                 <Select
                   value={filters.city || 'all'}
@@ -146,13 +147,29 @@ export function RenewalFilters({
                   </SelectContent>
                 </Select>
 
+                {/* Notice Period */}
+                <Select
+                  value={filters.noticePeriod?.toString() || 'all'}
+                  onValueChange={(v) => onFiltersChange({ ...filters, noticePeriod: v === 'all' ? undefined : parseInt(v) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Notice Period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Notices</SelectItem>
+                    <SelectItem value="30">30 Days</SelectItem>
+                    <SelectItem value="60">60 Days</SelectItem>
+                    <SelectItem value="90">90 Days</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 {/* Expiry Bucket */}
                 <Select
                   value={filters.expiryBucket || 'all'}
                   onValueChange={(v) => onFiltersChange({ ...filters, expiryBucket: v as any })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Expiry" />
+                    <SelectValue placeholder="Days Left" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Expiry</SelectItem>
