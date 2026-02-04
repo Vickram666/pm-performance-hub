@@ -7,6 +7,7 @@ import {
   Clock, 
   Send, 
   FileCheck, 
+  Upload,
   Receipt, 
   RefreshCw,
   CheckCircle2,
@@ -19,20 +20,20 @@ interface RenewalStageBadgeProps {
 }
 
 const stageConfig: Record<RenewalStage, { icon: any; className: string }> = {
-  not_started: { 
+  renewal_not_started: { 
     icon: Circle, 
     className: 'bg-slate-500/20 text-slate-400 border-slate-500/30' 
-  },
-  renewal_initiated: { 
-    icon: Play, 
-    className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
   },
   negotiation_in_progress: { 
     icon: MessageSquare, 
     className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' 
   },
-  owner_acknowledgement_pending: { 
-    icon: Clock, 
+  proposal_sent: { 
+    icon: Send, 
+    className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+  },
+  owner_acknowledged: { 
+    icon: CheckCircle2, 
     className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
   },
   agreement_sent: { 
@@ -43,9 +44,13 @@ const stageConfig: Record<RenewalStage, { icon: any; className: string }> = {
     icon: FileCheck, 
     className: 'bg-teal-500/20 text-teal-400 border-teal-500/30' 
   },
+  agreement_uploaded: { 
+    icon: Upload, 
+    className: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
+  },
   tcf_completed: { 
     icon: Receipt, 
-    className: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
+    className: 'bg-violet-500/20 text-violet-400 border-violet-500/30' 
   },
   pms_renewed: { 
     icon: RefreshCw, 
@@ -62,7 +67,8 @@ const stageConfig: Record<RenewalStage, { icon: any; className: string }> = {
 };
 
 export function RenewalStageBadge({ stage, showIcon = true }: RenewalStageBadgeProps) {
-  const { icon: Icon, className } = stageConfig[stage];
+  const config = stageConfig[stage] || stageConfig.renewal_not_started;
+  const { icon: Icon, className } = config;
 
   return (
     <Badge variant="outline" className={`${className} text-xs`}>

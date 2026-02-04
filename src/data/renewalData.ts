@@ -6,11 +6,13 @@ import {
   PMRenewalSummary,
   LeadershipRenewalStats,
   CityRenewalStats,
+  ActionLogEntry,
   calculateRiskLevel,
-  calculateScoreImpact,
+  calculateRenewalScoreImpact,
   calculateRenewalOpenDate,
   calculateLockDeadline,
-  RENEWAL_STAGE_ORDER
+  RENEWAL_STAGE_ORDER,
+  RENEWAL_STAGE_LABELS
 } from '@/types/renewal';
 import { addDays, differenceInDays, format, subDays } from 'date-fns';
 
@@ -29,7 +31,6 @@ const propertyNames = [
   'Hiranandani Gardens', 'Kalpataru Vista', 'Rustomjee Seasons', 'Shapoorji Pallonji'
 ];
 
-// Notice periods: 30, 60, or 90 days
 const noticePeriods = [30, 60, 90];
 
 function getRandomElement<T>(arr: T[]): T {
@@ -40,13 +41,46 @@ function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function generateActionLog(currentStage: RenewalStage, pmName: string): ActionLogEntry[] {
+  const log: ActionLogEntry[] = [];
+  const stageIndex = RENEWAL_STAGE_ORDER.indexOf(currentStage);
+  const today = new Date();
+  
+  const actions: { stage: RenewalStage; action: string; source: 'PM' | 'Owner' | 'System' }[] = [
+    { stage: 'renewal_not_started', action: 'Renewal opened automatically', source: 'System' },
+    { stage: 'negotiation_in_progress', action: 'Started renewal discussion', source: 'PM' },
+    { stage: 'proposal_sent', action: 'Sent renewal proposal to owner', source: 'PM' },
+    { stage: 'owner_acknowledged', action: 'Owner acknowledged proposal', source: 'Owner' },
+    { stage: 'agreement_sent', action: 'Sent agreement for signature', source: 'PM' },
+    { stage: 'agreement_signed', action: 'Owner signed agreement', source: 'Owner' },
+    { stage: 'agreement_uploaded', action: 'Uploaded signed agreement', source: 'PM' },
+    { stage: 'tcf_completed', action: 'TCF punched successfully', source: 'PM' },
+    { stage: 'pms_renewed', action: 'PMS subscription renewed', source: 'PM' },
+    { stage: 'renewal_completed', action: 'Renewal marked complete', source: 'System' },
+  ];
+  
+  for (let i = 0; i <= stageIndex && i < actions.length; i++) {
+    const daysAgo = (stageIndex - i) * getRandomInt(1, 3);
+    log.push({
+      id: `LOG${Date.now()}${i}`,
+      action: actions[i].action,
+      actionBy: actions[i].source === 'PM' ? pmName : actions[i].source === 'Owner' ? 'Property Owner' : 'System',
+      source: actions[i].source,
+      timestamp: format(subDays(today, daysAgo), 'yyyy-MM-dd HH:mm:ss'),
+      stageFrom: i > 0 ? actions[i - 1].stage : undefined,
+      stageTo: actions[i].stage,
+    });
+  }
+  
+  return log;
+}
+
 function generateRenewalRecord(index: number): RenewalRecord {
   const today = new Date();
-  const daysToExpiry = getRandomInt(-5, 120); // Extended range for notice-period awareness
+  const daysToExpiry = getRandomInt(-5, 120);
   const leaseEndDate = addDays(today, daysToExpiry);
   const leaseStartDate = subDays(leaseEndDate, 365);
   
-  // Assign notice period - varies by property
   const noticePeriod = getRandomElement(noticePeriods);
   const renewalOpenDate = calculateRenewalOpenDate(leaseEndDate, noticePeriod);
   const lockDeadline = calculateLockDeadline(leaseEndDate, noticePeriod);
@@ -55,39 +89,39 @@ function generateRenewalRecord(index: number): RenewalRecord {
   const pmName = pmNames[pmIndex];
   const pmId = `PM${String(pmIndex + 1).padStart(3, '0')}`;
   
-  // Determine stage based on days to expiry and notice period
+  // Determine stage based on days to expiry
   let currentStage: RenewalStage;
   const rand = Math.random();
   
-  const lockDays = noticePeriod >= 60 ? 30 : 15;
-  const ackDays = noticePeriod >= 60 ? 45 : 30;
-  const initiationDays = noticePeriod + 30;
-  
   if (daysToExpiry < 0) {
     currentStage = rand > 0.3 ? 'renewal_completed' : 'renewal_failed';
-  } else if (daysToExpiry <= lockDays) {
-    const stages: RenewalStage[] = ['pms_renewed', 'tcf_completed', 'agreement_signed', 'renewal_completed', 'renewal_failed'];
+  } else if (daysToExpiry <= 15) {
+    const stages: RenewalStage[] = ['pms_renewed', 'tcf_completed', 'agreement_uploaded', 'renewal_completed', 'renewal_failed'];
     currentStage = getRandomElement(stages);
-  } else if (daysToExpiry <= ackDays) {
-    const stages: RenewalStage[] = ['agreement_sent', 'agreement_signed', 'owner_acknowledgement_pending', 'negotiation_in_progress'];
+  } else if (daysToExpiry <= 30) {
+    const stages: RenewalStage[] = ['agreement_sent', 'agreement_signed', 'agreement_uploaded', 'owner_acknowledged'];
     currentStage = getRandomElement(stages);
-  } else if (daysToExpiry <= initiationDays) {
-    const stages: RenewalStage[] = ['renewal_initiated', 'negotiation_in_progress', 'owner_acknowledgement_pending', 'not_started'];
+  } else if (daysToExpiry <= 45) {
+    const stages: RenewalStage[] = ['negotiation_in_progress', 'proposal_sent', 'owner_acknowledged', 'renewal_not_started'];
     currentStage = getRandomElement(stages);
   } else {
-    const stages: RenewalStage[] = ['not_started', 'renewal_initiated', 'negotiation_in_progress'];
+    const stages: RenewalStage[] = ['renewal_not_started', 'negotiation_in_progress', 'proposal_sent'];
     currentStage = getRandomElement(stages);
   }
   
-  const hasOwnerAck = RENEWAL_STAGE_ORDER.indexOf(currentStage) >= RENEWAL_STAGE_ORDER.indexOf('agreement_sent');
-  const riskLevel = calculateRiskLevel(daysToExpiry, currentStage, hasOwnerAck, noticePeriod);
-  const scoreImpact = calculateScoreImpact(daysToExpiry, currentStage, riskLevel);
+  const stageIndex = RENEWAL_STAGE_ORDER.indexOf(currentStage);
+  const hasOwnerAck = stageIndex >= RENEWAL_STAGE_ORDER.indexOf('owner_acknowledged');
+  const agreementSigned = stageIndex >= RENEWAL_STAGE_ORDER.indexOf('agreement_signed');
+  const agreementUploaded = stageIndex >= RENEWAL_STAGE_ORDER.indexOf('agreement_uploaded');
+  
+  const riskLevel = calculateRiskLevel(Math.max(0, daysToExpiry), currentStage, hasOwnerAck, noticePeriod);
+  const scoreImpact = calculateRenewalScoreImpact(Math.max(0, daysToExpiry), currentStage, hasOwnerAck, noticePeriod);
   
   const currentRent = getRandomInt(15000, 80000);
   const proposedRent = currentRent + getRandomInt(1000, 5000);
   
   const ownerAckStatus = hasOwnerAck ? 'accepted' : 
-    (currentStage === 'owner_acknowledgement_pending' ? 'pending' : 'pending');
+    (currentStage === 'proposal_sent' ? 'pending' : 'pending');
   
   return {
     id: `REN${String(index + 1).padStart(4, '0')}`,
@@ -115,7 +149,9 @@ function generateRenewalRecord(index: number): RenewalRecord {
       riskLevel,
       lastActionDate: format(subDays(today, getRandomInt(1, 10)), 'yyyy-MM-dd'),
       nextActionDueDate: format(addDays(today, getRandomInt(1, 7)), 'yyyy-MM-dd'),
-      stageHistory: generateStageHistory(currentStage, leaseEndDate),
+      stageHistory: generateStageHistory(currentStage, leaseEndDate, pmName),
+      agreementSigned,
+      agreementUploaded,
     },
     ownerAcknowledgement: {
       status: ownerAckStatus,
@@ -124,14 +160,15 @@ function generateRenewalRecord(index: number): RenewalRecord {
       otpVerified: hasOwnerAck,
       consentId: hasOwnerAck ? `CON${Date.now()}${index}` : undefined,
     },
-    alerts: generateAlerts(daysToExpiry, currentStage, riskLevel, noticePeriod),
+    actionLog: generateActionLog(currentStage, pmName),
+    alerts: generateAlerts(Math.max(0, daysToExpiry), currentStage, riskLevel, noticePeriod),
     scoreImpact,
     createdAt: format(subDays(leaseEndDate, noticePeriod + 30), 'yyyy-MM-dd'),
     updatedAt: format(today, 'yyyy-MM-dd'),
   };
 }
 
-function generateStageHistory(currentStage: RenewalStage, leaseEndDate: Date) {
+function generateStageHistory(currentStage: RenewalStage, leaseEndDate: Date, pmName: string) {
   const history = [];
   const stageIndex = RENEWAL_STAGE_ORDER.indexOf(currentStage);
   const today = new Date();
@@ -143,7 +180,7 @@ function generateStageHistory(currentStage: RenewalStage, leaseEndDate: Date) {
       stage,
       enteredAt: format(subDays(today, daysAgo + getRandomInt(1, 3)), 'yyyy-MM-dd HH:mm:ss'),
       completedAt: i < stageIndex ? format(subDays(today, daysAgo), 'yyyy-MM-dd HH:mm:ss') : undefined,
-      actionBy: getRandomElement(pmNames),
+      actionBy: pmName,
     });
   }
   
@@ -154,22 +191,18 @@ function generateAlerts(daysToExpiry: number, stage: RenewalStage, riskLevel: st
   const alerts = [];
   const today = new Date();
   
-  const lockDays = noticePeriod >= 60 ? 30 : 15;
-  const ackDays = noticePeriod >= 60 ? 45 : 30;
-  const initiationDays = noticePeriod + 30;
-  
-  if (daysToExpiry <= lockDays && stage !== 'renewal_completed' && stage !== 'pms_renewed') {
+  if (daysToExpiry <= 15 && stage !== 'renewal_completed' && stage !== 'pms_renewed') {
     alerts.push({
       id: `ALT${Date.now()}1`,
       type: 'critical' as const,
-      message: `Red-risk escalation: Renewal not locked with ${daysToExpiry} days remaining (SLA: ${lockDays} days)`,
+      message: `Critical: Only ${daysToExpiry} days remaining. Complete renewal immediately.`,
       dueDate: format(addDays(today, daysToExpiry), 'yyyy-MM-dd'),
       isRead: false,
       createdAt: format(today, 'yyyy-MM-dd'),
     });
   }
   
-  if (daysToExpiry <= ackDays && stage === 'not_started') {
+  if (daysToExpiry <= 30 && stage === 'renewal_not_started') {
     alerts.push({
       id: `ALT${Date.now()}2`,
       type: 'escalation' as const,
@@ -177,17 +210,6 @@ function generateAlerts(daysToExpiry: number, stage: RenewalStage, riskLevel: st
       dueDate: format(addDays(today, daysToExpiry), 'yyyy-MM-dd'),
       isRead: false,
       createdAt: format(today, 'yyyy-MM-dd'),
-    });
-  }
-  
-  if (daysToExpiry <= initiationDays && daysToExpiry > ackDays && stage === 'not_started') {
-    alerts.push({
-      id: `ALT${Date.now()}3`,
-      type: 'warning' as const,
-      message: `Start renewal process - ${noticePeriod}-day notice period requires action now`,
-      dueDate: format(addDays(today, daysToExpiry - initiationDays), 'yyyy-MM-dd'),
-      isRead: true,
-      createdAt: format(subDays(today, 5), 'yyyy-MM-dd'),
     });
   }
   
@@ -205,6 +227,7 @@ export function filterRenewals(renewals: RenewalRecord[], filters: RenewalFilter
     if (filters.pmId && renewal.property.pmId !== filters.pmId) return false;
     if (filters.riskLevel && renewal.status.riskLevel !== filters.riskLevel) return false;
     if (filters.stage && renewal.status.currentStage !== filters.stage) return false;
+    if (filters.noticePeriod && renewal.lease.noticePeriod !== filters.noticePeriod) return false;
     
     if (filters.expiryBucket && filters.expiryBucket !== 'all') {
       const days = renewal.lease.daysToExpiry;
@@ -237,6 +260,7 @@ export function calculateFunnelStats(renewals: RenewalRecord[]): RenewalFunnelSt
     byRisk: { green: 0, amber: 0, red: 0 },
     byExpiryBucket: { critical: 0, urgent: 0, upcoming: 0, safe: 0 },
     conversionRate: 0,
+    avgDaysLeft: 0,
   };
   
   // Initialize stage counts
@@ -247,10 +271,12 @@ export function calculateFunnelStats(renewals: RenewalRecord[]): RenewalFunnelSt
   
   let completed = 0;
   let failed = 0;
+  let totalDays = 0;
   
   renewals.forEach(renewal => {
     stats.byStage[renewal.status.currentStage]++;
     stats.byRisk[renewal.status.riskLevel]++;
+    totalDays += renewal.lease.daysToExpiry;
     
     const days = renewal.lease.daysToExpiry;
     if (days <= 15) stats.byExpiryBucket.critical++;
@@ -264,6 +290,7 @@ export function calculateFunnelStats(renewals: RenewalRecord[]): RenewalFunnelSt
   
   const totalClosed = completed + failed;
   stats.conversionRate = totalClosed > 0 ? Math.round((completed / totalClosed) * 100) : 0;
+  stats.avgDaysLeft = renewals.length > 0 ? Math.round(totalDays / renewals.length) : 0;
   
   return stats;
 }
@@ -303,9 +330,8 @@ export function getPMRenewalSummaries(renewals: RenewalRecord[]): PMRenewalSumma
     if (renewal.status.currentStage === 'renewal_failed') pm.failedCount++;
   });
   
-  // Calculate intervention required
   pmMap.forEach(pm => {
-    pm.avgDaysToAction = Math.round(Math.random() * 5 + 2); // Mock
+    pm.avgDaysToAction = Math.round(Math.random() * 5 + 2);
     pm.interventionRequired = pm.redCount >= 2 || (pm.redCount + pm.amberCount) / pm.totalRenewals > 0.4;
   });
   
@@ -350,7 +376,6 @@ export function getLeadershipStats(renewals: RenewalRecord[]): LeadershipRenewal
     }
   });
   
-  // Calculate rates
   cityMap.forEach(stats => {
     const closed = stats.completedCount + stats.failedCount;
     stats.renewalRate = closed > 0 ? Math.round((stats.completedCount / closed) * 100) : 0;
