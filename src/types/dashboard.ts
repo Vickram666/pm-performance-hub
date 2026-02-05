@@ -41,9 +41,7 @@ export interface PropertyScore {
   financial: FinancialMetrics;
   customer: CustomerMetrics;
   renewal: RenewalMetrics;
-  rawScore: number;
-  medianAdjustmentFactor: number;
-  adjustedScore: number;
+  totalScore: number; // Sum of all pillars (0-100)
 }
 
 // Payout band based on Final Monthly Score (Avg Property Health Score)

@@ -113,17 +113,17 @@ export const PropertyScoreSection = ({ propertyScore }: PropertyScoreSectionProp
   const renewalTotal = renewal.timelyRenewalInitiation + renewal.renewalRAUploadTimely + 
     renewal.renewalPercentScore + renewal.homeInsurance;
 
+  // Calculate total score from pillars
+  const totalScore = operationsTotal + financialTotal + customerTotal + renewalTotal;
+
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">Property Performance Score</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Raw Score:</span>
-          <span className="font-semibold">{propertyScore.rawScore.toFixed(1)}</span>
-          <span className="text-sm text-muted-foreground mx-1">×</span>
-          <span className="font-semibold text-primary">{propertyScore.medianAdjustmentFactor}</span>
-          <span className="text-sm text-muted-foreground mx-1">=</span>
-          <span className="text-lg font-bold text-primary">{propertyScore.adjustedScore.toFixed(1)}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">Total Score:</span>
+          <span className="text-2xl font-bold text-primary">{Math.max(0, totalScore).toFixed(1)}</span>
+          <span className="text-sm text-muted-foreground">/ 100</span>
         </div>
       </div>
 

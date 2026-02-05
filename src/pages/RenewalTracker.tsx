@@ -11,6 +11,7 @@ import { PMActionList } from '@/components/renewal/PMActionList';
 import { TLDashboard } from '@/components/renewal/TLDashboard';
 import { LeadershipDashboard } from '@/components/renewal/LeadershipDashboard';
 import { RenewalSummaryStrip } from '@/components/renewal/RenewalSummaryStrip';
+import { NotificationBell } from '@/components/renewal/NotificationBell';
 import { 
   allRenewals, 
   filterRenewals, 
@@ -22,6 +23,12 @@ import {
 import { RenewalRecord, RenewalFilters as FiltersType, RenewalStage, VALID_STAGE_TRANSITIONS, ActionLogEntry } from '@/types/renewal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { 
+  notifyRedRisk, 
+  notifyOwnerAcknowledgement, 
+  notifyStageAdvancement,
+  checkAndNotifyRedRiskRenewals 
+} from '@/services/notificationService';
 
 type ViewMode = 'pm' | 'tl' | 'leadership';
 
@@ -47,6 +54,11 @@ export default function RenewalTracker() {
     searchQuery: '',
   });
   const [selectedRenewal, setSelectedRenewal] = useState<RenewalRecord | null>(null);
+
+  // Check for red risk renewals on load (simulated scheduled job)
+  useMemo(() => {
+    checkAndNotifyRedRiskRenewals(renewals);
+  }, [renewals]);
 
   // Get unique cities and zones
   const cities = useMemo(() => 
@@ -184,6 +196,16 @@ export default function RenewalTracker() {
                 </p>
               </div>
             </div>
+            
+            {/* Notification Bell */}
+            <NotificationBell 
+              onNotificationClick={(notification) => {
+                const renewal = renewals.find(r => r.id === notification.renewalId);
+                if (renewal) {
+                  setSelectedRenewal(renewal);
+                }
+              }}
+            />
             
             {/* View Mode Tabs */}
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
