@@ -35,9 +35,7 @@ export const mockPMData: MonthlyData = {
       renewalPercentScore: 8.5,
       homeInsurance: 3.5,
     },
-    rawScore: 75.4,
-    medianAdjustmentFactor: 1.05,
-    adjustedScore: 74,
+    totalScore: 74, // Sum of all pillar scores
   },
   finalMonthlyScore: 74, // Avg property health score
   eligibilityStatus: 'partial',

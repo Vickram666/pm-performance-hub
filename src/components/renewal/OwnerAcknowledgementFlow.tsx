@@ -10,9 +10,11 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { OwnerAcknowledgement, RenewalRecord } from '@/types/renewal';
+import { notifyOwnerAcknowledgement } from '@/services/notificationService';
+import { Loader2 } from 'lucide-react';
 
 type OwnerAction = 'accept' | 'reject' | 'request_changes';
-type Step = 'choose' | 'details' | 'otp' | 'done';
+type Step = 'choose' | 'details' | 'otp' | 'verifying' | 'done';
 
 interface OwnerAcknowledgementFlowProps {
   open: boolean;
@@ -143,6 +145,9 @@ export function OwnerAcknowledgementFlow({
       return;
     }
 
+    // Show verifying state
+    setStep('verifying');
+
     const now = new Date();
     const ack: OwnerAcknowledgement = {
       status:
@@ -162,8 +167,15 @@ export function OwnerAcknowledgementFlow({
       rejectionReason: action === 'reject' ? rejectionReason.trim() : undefined,
     };
 
-    onComplete(ack);
-    setStep('done');
+    // Simulate verification delay and send notification
+    setTimeout(async () => {
+      onComplete(ack);
+      
+      // Send email notification
+      await notifyOwnerAcknowledgement(renewal, ack.status as 'accepted' | 'rejected' | 'changes_requested');
+      
+      setStep('done');
+    }, 1500);
   };
 
   const title =
@@ -339,6 +351,17 @@ export function OwnerAcknowledgementFlow({
                     </Button>
                     <Button onClick={verifyOtp}>Verify</Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {step === 'verifying' && (
+            <Card>
+              <CardContent className="py-8">
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Verifying and recording acknowledgement...</p>
                 </div>
               </CardContent>
             </Card>
