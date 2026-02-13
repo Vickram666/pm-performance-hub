@@ -36,19 +36,11 @@ const stageConfig: Record<RenewalStage, { icon: any; className: string }> = {
     icon: CheckCircle2, 
     className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
   },
-  agreement_sent: { 
-    icon: Send, 
-    className: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' 
-  },
-  agreement_signed: { 
-    icon: FileCheck, 
-    className: 'bg-teal-500/20 text-teal-400 border-teal-500/30' 
-  },
   agreement_uploaded: { 
     icon: Upload, 
     className: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
   },
-  tcf_completed: { 
+  tcf_created: { 
     icon: Receipt, 
     className: 'bg-violet-500/20 text-violet-400 border-violet-500/30' 
   },

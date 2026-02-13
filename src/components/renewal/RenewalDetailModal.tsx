@@ -6,23 +6,14 @@ import { Separator } from '@/components/ui/separator';
 import { RenewalRiskBadge } from './RenewalRiskBadge';
 import { Button } from '@/components/ui/button';
 import { 
-  Building, 
-  MapPin, 
-  User, 
-  Calendar, 
-  IndianRupee, 
-  Clock, 
-  AlertTriangle,
-  CheckCircle,
-  FileText,
-  Shield,
-  TrendingDown,
-  XCircle,
-  ArrowRight
+  Building, MapPin, User, Calendar, IndianRupee, Clock, AlertTriangle,
+  CheckCircle, FileText, Shield, TrendingDown, XCircle, ArrowRight,
+  Upload, Activity, ShieldAlert
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useState } from 'react';
 import { OwnerAcknowledgementFlow } from './OwnerAcknowledgementFlow';
+import { AgreementUploadModal } from './AgreementUploadModal';
 
 interface RenewalDetailModalProps {
   renewal: RenewalRecord | null;
@@ -34,17 +25,14 @@ interface RenewalDetailModalProps {
 
 export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, onNextAction }: RenewalDetailModalProps) {
   const [ackFlowOpen, setAckFlowOpen] = useState(false);
+  const [agreementUploadOpen, setAgreementUploadOpen] = useState(false);
 
   if (!renewal) return null;
 
   const hasOwnerAck = renewal.ownerAcknowledgement.status === 'accepted';
   const impact = renewal.scoreImpact;
   const hasImpact = impact.currentPoints < 25;
-  const nextAction = getNextAction(
-    renewal.status.currentStage,
-    renewal.status.agreementSigned,
-    renewal.status.agreementUploaded
-  );
+  const nextAction = getNextAction(renewal.status.currentStage);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -61,7 +49,7 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
 
         <div className="space-y-6">
           {/* Header Summary */}
-          <div className="grid grid-cols-4 gap-4 p-4 rounded-lg bg-muted/50">
+          <div className="grid grid-cols-5 gap-4 p-4 rounded-lg bg-muted/50">
             <div className="text-center">
               <div className="text-3xl font-bold text-primary">{renewal.lease.daysToExpiry}</div>
               <div className="text-xs text-muted-foreground">Days Left</div>
@@ -79,6 +67,17 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
             <div className="text-center">
               <div className="text-lg font-bold">{impact.currentPoints}/25</div>
               <div className="text-xs text-muted-foreground">Renewal Score</div>
+            </div>
+            <div className="text-center">
+              <Badge variant="outline" className={`text-xs ${
+                renewal.status.renewalHealth === 'green' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                renewal.status.renewalHealth === 'yellow' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                'bg-red-500/20 text-red-400 border-red-500/30'
+              }`}>
+                <Activity className="h-3 w-3 mr-1" />
+                {renewal.status.renewalHealth === 'green' ? 'On Track' : renewal.status.renewalHealth === 'yellow' ? 'At Risk' : 'Overdue'}
+              </Badge>
+              <div className="text-xs text-muted-foreground mt-1">Health</div>
             </div>
             <div className="text-center">
               {hasImpact ? (
@@ -128,7 +127,6 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                   const currentIndex = RENEWAL_STAGE_ORDER.indexOf(renewal.status.currentStage);
                   const isCompleted = index < currentIndex;
                   const isCurrent = stage === renewal.status.currentStage;
-                  const isPending = index > currentIndex;
                   
                   return (
                     <div key={stage} className="flex items-center">
@@ -171,6 +169,10 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-muted-foreground">ID:</span>
                   <span className="font-mono">{renewal.property.propertyId}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">Config:</span>
+                  <span>{renewal.property.configuration || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -225,21 +227,28 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                 )}
                 <Separator />
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Agreement Signed:</span>
-                  {renewal.status.agreementSigned ? (
-                    <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Agreement Uploaded:</span>
-                  {renewal.status.agreementUploaded ? (
-                    <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  {renewal.agreementUpload.uploaded ? (
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      <span className="text-xs text-muted-foreground">{renewal.agreementUpload.fileName}</span>
+                    </div>
                   ) : (
                     <XCircle className="h-4 w-4 text-muted-foreground" />
                   )}
                 </div>
+                {renewal.agreementUpload.uploaded && (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Effective Start:</span>
+                      <span>{renewal.agreementUpload.effectiveLeaseStartDate}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Duration:</span>
+                      <span>{renewal.agreementUpload.leaseDurationMonths} months</span>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -268,10 +277,18 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                           <span className="text-muted-foreground">OTP Verified: </span>
                           <span>{renewal.ownerAcknowledgement.otpVerified ? 'Yes' : 'No'}</span>
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">Timestamp: </span>
-                          <span>{renewal.ownerAcknowledgement.timestamp}</span>
-                        </div>
+                        {renewal.ownerAcknowledgement.sentDate && (
+                          <div>
+                            <span className="text-muted-foreground">Sent: </span>
+                            <span>{renewal.ownerAcknowledgement.sentDate}</span>
+                          </div>
+                        )}
+                        {renewal.ownerAcknowledgement.approvedDate && (
+                          <div>
+                            <span className="text-muted-foreground">Approved: </span>
+                            <span>{renewal.ownerAcknowledgement.approvedDate}</span>
+                          </div>
+                        )}
                         <div>
                           <span className="text-muted-foreground">Consent ID: </span>
                           <span className="font-mono text-xs">{renewal.ownerAcknowledgement.consentId}</span>
@@ -280,12 +297,6 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                           <div>
                             <span className="text-muted-foreground">Device: </span>
                             <span className="text-xs">{renewal.ownerAcknowledgement.deviceInfo}</span>
-                          </div>
-                        )}
-                        {renewal.ownerAcknowledgement.ipAddress && (
-                          <div>
-                            <span className="text-muted-foreground">IP: </span>
-                            <span className="font-mono text-xs">{renewal.ownerAcknowledgement.ipAddress}</span>
                           </div>
                         )}
                       </div>
@@ -299,13 +310,15 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                     <div>
                       <p className="font-medium text-amber-400">Pending Acknowledgement</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Owner acknowledgement is required before sending the agreement.
+                        Owner acknowledgement is required before uploading the agreement.
                       </p>
-                      <div className="mt-3">
-                        <Button onClick={() => setAckFlowOpen(true)}>
-                          Simulate Owner Response
-                        </Button>
-                      </div>
+                      {renewal.status.currentStage === 'proposal_sent' && (
+                        <div className="mt-3">
+                          <Button onClick={() => setAckFlowOpen(true)}>
+                            Send Owner Acknowledgement
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -327,6 +340,47 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                 },
               };
               onRenewalUpdate?.(updated);
+            }}
+          />
+
+          {/* Agreement Upload Section */}
+          {renewal.status.currentStage === 'owner_acknowledged' && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Renewal Agreement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Upload the signed renewal agreement (PDF mandatory). You must provide the effective lease start date and duration.
+                  </p>
+                  <Button onClick={() => setAgreementUploadOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Agreement
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <AgreementUploadModal
+            open={agreementUploadOpen}
+            onOpenChange={setAgreementUploadOpen}
+            renewal={renewal}
+            onComplete={(agreementData) => {
+              const updated: RenewalRecord = {
+                ...renewal,
+                agreementUpload: agreementData,
+                status: {
+                  ...renewal.status,
+                  currentStage: 'agreement_uploaded',
+                },
+              };
+              onRenewalUpdate?.(updated);
+              setAgreementUploadOpen(false);
             }}
           />
 
@@ -372,7 +426,7 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
-                  Active Alerts
+                  Active Alerts & Reminders
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -382,6 +436,7 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                     className={`p-3 rounded-lg border ${
                       alert.type === 'critical' ? 'bg-red-500/10 border-red-500/20' :
                       alert.type === 'escalation' ? 'bg-amber-500/10 border-amber-500/20' :
+                      alert.type === 'warning' ? 'bg-yellow-500/10 border-yellow-500/20' :
                       'bg-blue-500/10 border-blue-500/20'
                     }`}
                   >
@@ -404,7 +459,15 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                 className="w-full gap-2" 
                 size="lg"
                 variant={renewal.status.riskLevel === 'red' ? 'destructive' : 'default'}
-                onClick={() => onNextAction?.(renewal, nextAction.actionKey)}
+                onClick={() => {
+                  if (nextAction.actionKey === 'send_owner_ack') {
+                    setAckFlowOpen(true);
+                  } else if (nextAction.actionKey === 'upload_agreement') {
+                    setAgreementUploadOpen(true);
+                  } else {
+                    onNextAction?.(renewal, nextAction.actionKey);
+                  }
+                }}
               >
                 {nextAction.label}
                 <ArrowRight className="h-4 w-4" />
