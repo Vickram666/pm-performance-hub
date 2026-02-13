@@ -34,8 +34,7 @@ export function RenewalFilters({
 
   const stages: RenewalStage[] = [
     'renewal_not_started', 'negotiation_in_progress', 'proposal_sent',
-    'owner_acknowledged', 'agreement_sent', 'agreement_signed',
-    'agreement_uploaded', 'tcf_completed', 'pms_renewed', 
+    'owner_acknowledged', 'agreement_uploaded', 'tcf_created', 'pms_renewed', 
     'renewal_completed', 'renewal_failed'
   ];
 
@@ -43,7 +42,6 @@ export function RenewalFilters({
     <Card>
       <CardContent className="p-4">
         <div className="flex flex-col gap-4">
-          {/* Search and Filter Toggle */}
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -77,11 +75,9 @@ export function RenewalFilters({
             )}
           </div>
 
-          {/* Expandable Filters */}
           <Collapsible open={isOpen} onOpenChange={setIsOpen}>
             <CollapsibleContent>
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-3 border-t">
-                {/* City */}
                 <Select
                   value={filters.city || 'all'}
                   onValueChange={(v) => onFiltersChange({ ...filters, city: v === 'all' ? undefined : v })}
@@ -97,7 +93,6 @@ export function RenewalFilters({
                   </SelectContent>
                 </Select>
 
-                {/* Zone */}
                 <Select
                   value={filters.zone || 'all'}
                   onValueChange={(v) => onFiltersChange({ ...filters, zone: v === 'all' ? undefined : v })}
@@ -113,7 +108,6 @@ export function RenewalFilters({
                   </SelectContent>
                 </Select>
 
-                {/* Risk Level */}
                 <Select
                   value={filters.riskLevel || 'all'}
                   onValueChange={(v) => onFiltersChange({ ...filters, riskLevel: v === 'all' ? undefined : v as RiskLevel })}
@@ -129,7 +123,6 @@ export function RenewalFilters({
                   </SelectContent>
                 </Select>
 
-                {/* Stage */}
                 <Select
                   value={filters.stage || 'all'}
                   onValueChange={(v) => onFiltersChange({ ...filters, stage: v === 'all' ? undefined : v as RenewalStage })}
@@ -147,7 +140,6 @@ export function RenewalFilters({
                   </SelectContent>
                 </Select>
 
-                {/* Notice Period */}
                 <Select
                   value={filters.noticePeriod?.toString() || 'all'}
                   onValueChange={(v) => onFiltersChange({ ...filters, noticePeriod: v === 'all' ? undefined : parseInt(v) })}
@@ -163,7 +155,6 @@ export function RenewalFilters({
                   </SelectContent>
                 </Select>
 
-                {/* Expiry Bucket */}
                 <Select
                   value={filters.expiryBucket || 'all'}
                   onValueChange={(v) => onFiltersChange({ ...filters, expiryBucket: v as any })}

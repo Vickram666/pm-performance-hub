@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Users, BarChart3, Calendar } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Users, BarChart3, Calendar, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RenewalFunnel } from '@/components/renewal/RenewalFunnel';
@@ -12,33 +12,30 @@ import { TLDashboard } from '@/components/renewal/TLDashboard';
 import { LeadershipDashboard } from '@/components/renewal/LeadershipDashboard';
 import { RenewalSummaryStrip } from '@/components/renewal/RenewalSummaryStrip';
 import { NotificationBell } from '@/components/renewal/NotificationBell';
+import { RenewalAnalyticsDashboard } from '@/components/renewal/RenewalAnalyticsDashboard';
 import { 
   allRenewals, 
   filterRenewals, 
   calculateFunnelStats,
   getPMRenewalSummaries,
   getLeadershipStats,
-  getPMActionItems
+  getPMActionItems,
+  getAnalyticsStats
 } from '@/data/renewalData';
 import { RenewalRecord, RenewalFilters as FiltersType, RenewalStage, VALID_STAGE_TRANSITIONS, ActionLogEntry } from '@/types/renewal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { 
-  notifyRedRisk, 
-  notifyOwnerAcknowledgement, 
-  notifyStageAdvancement,
-  checkAndNotifyRedRiskRenewals 
-} from '@/services/notificationService';
+import { checkAndNotifyRedRiskRenewals } from '@/services/notificationService';
 
-type ViewMode = 'pm' | 'tl' | 'leadership';
+type ViewMode = 'pm' | 'tl' | 'leadership' | 'analytics';
 
 // Action key to next stage mapping
 const actionToStage: Record<string, RenewalStage> = {
   start_renewal: 'negotiation_in_progress',
   send_proposal: 'proposal_sent',
-  send_agreement: 'agreement_sent',
+  send_owner_ack: 'proposal_sent', // Owner ack opens the flow, doesn't advance stage directly
   upload_agreement: 'agreement_uploaded',
-  punch_tcf: 'tcf_completed',
+  punch_tcf: 'tcf_created',
   renew_pms: 'pms_renewed',
   close_renewal: 'renewal_completed',
 };
@@ -55,12 +52,10 @@ export default function RenewalTracker() {
   });
   const [selectedRenewal, setSelectedRenewal] = useState<RenewalRecord | null>(null);
 
-  // Check for red risk renewals on load (simulated scheduled job)
   useMemo(() => {
     checkAndNotifyRedRiskRenewals(renewals);
   }, [renewals]);
 
-  // Get unique cities and zones
   const cities = useMemo(() => 
     [...new Set(renewals.map(r => r.property.city))].sort(),
     [renewals]
@@ -70,7 +65,6 @@ export default function RenewalTracker() {
     [renewals]
   );
 
-  // Filter renewals based on view mode
   const filteredRenewals = useMemo(() => {
     let baseFilters = { ...filters };
     if (viewMode === 'pm') {
@@ -79,7 +73,6 @@ export default function RenewalTracker() {
     return filterRenewals(renewals, baseFilters);
   }, [filters, viewMode, pmId, renewals]);
 
-  // Calculate stats
   const funnelStats = useMemo(() => 
     calculateFunnelStats(filteredRenewals),
     [filteredRenewals]
@@ -100,7 +93,11 @@ export default function RenewalTracker() {
     [renewals, pmId]
   );
 
-  // Count active filters
+  const analyticsStats = useMemo(() =>
+    getAnalyticsStats(renewals),
+    [renewals]
+  );
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.city) count++;
@@ -120,22 +117,25 @@ export default function RenewalTracker() {
     }));
   };
 
-  // Handle next action - system-driven stage advancement
   const handleNextAction = useCallback((renewal: RenewalRecord, actionKey: string) => {
+    // send_owner_ack opens the modal flow - handled by detail modal
+    if (actionKey === 'send_owner_ack' || actionKey === 'upload_agreement') {
+      setSelectedRenewal(renewal);
+      return;
+    }
+
     const nextStage = actionToStage[actionKey];
     if (!nextStage) {
       toast.error('Unknown action');
       return;
     }
 
-    // Validate transition
     const validTransitions = VALID_STAGE_TRANSITIONS[renewal.status.currentStage];
     if (!validTransitions.includes(nextStage)) {
       toast.error('Invalid stage transition. Follow the renewal process in order.');
       return;
     }
 
-    // Create action log entry
     const newLogEntry: ActionLogEntry = {
       id: `LOG${Date.now()}`,
       action: getActionLabel(actionKey),
@@ -146,15 +146,13 @@ export default function RenewalTracker() {
       stageTo: nextStage,
     };
 
-    // Update renewal
     const updated: RenewalRecord = {
       ...renewal,
       status: {
         ...renewal.status,
         currentStage: nextStage,
         lastActionDate: format(new Date(), 'yyyy-MM-dd'),
-        agreementSigned: nextStage === 'agreement_signed' ? true : renewal.status.agreementSigned,
-        agreementUploaded: nextStage === 'agreement_uploaded' ? true : renewal.status.agreementUploaded,
+        stageEnteredAt: format(new Date(), 'yyyy-MM-dd'),
       },
       actionLog: [...renewal.actionLog, newLogEntry],
       updatedAt: format(new Date(), 'yyyy-MM-dd'),
@@ -176,7 +174,6 @@ export default function RenewalTracker() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b">
         <div className="container py-4">
           <div className="flex items-center justify-between">
@@ -197,7 +194,6 @@ export default function RenewalTracker() {
               </div>
             </div>
             
-            {/* Notification Bell */}
             <NotificationBell 
               onNotificationClick={(notification) => {
                 const renewal = renewals.find(r => r.id === notification.renewalId);
@@ -207,7 +203,6 @@ export default function RenewalTracker() {
               }}
             />
             
-            {/* View Mode Tabs */}
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
               <TabsList>
                 <TabsTrigger value="pm" className="gap-2">
@@ -222,32 +217,28 @@ export default function RenewalTracker() {
                   <BarChart3 className="h-4 w-4" />
                   Leadership
                 </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-2">
+                  <PieChart className="h-4 w-4" />
+                  Analytics
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container py-6 space-y-6">
         {viewMode === 'pm' && (
           <>
-            {/* Summary Strip */}
             <RenewalSummaryStrip stats={funnelStats} />
-
-            {/* Action List */}
             <PMActionList 
               needsActionToday={pmActionItems.needsActionToday}
               onRenewalClick={setSelectedRenewal}
             />
-
-            {/* Funnel Stats */}
             <RenewalFunnel 
               stats={funnelStats} 
               onBucketClick={handleBucketClick}
             />
-
-            {/* Filters */}
             <RenewalFilters
               filters={filters}
               onFiltersChange={setFilters}
@@ -255,8 +246,6 @@ export default function RenewalTracker() {
               zones={zones}
               activeFilterCount={activeFilterCount}
             />
-
-            {/* Renewal Table */}
             <RenewalTable
               renewals={filteredRenewals}
               onRenewalClick={setSelectedRenewal}
@@ -273,7 +262,14 @@ export default function RenewalTracker() {
           <LeadershipDashboard stats={leadershipStats} />
         )}
 
-        {/* Detail Modal */}
+        {viewMode === 'analytics' && (
+          <RenewalAnalyticsDashboard 
+            stats={analyticsStats}
+            renewals={renewals}
+            cities={cities}
+          />
+        )}
+
         <RenewalDetailModal
           renewal={selectedRenewal}
           open={!!selectedRenewal}
@@ -290,9 +286,9 @@ function getActionLabel(actionKey: string): string {
   const labels: Record<string, string> = {
     start_renewal: 'Started renewal discussion',
     send_proposal: 'Sent renewal proposal to owner',
-    send_agreement: 'Sent agreement for signature',
-    upload_agreement: 'Uploaded signed agreement',
-    punch_tcf: 'TCF punched successfully',
+    send_owner_ack: 'Sent owner acknowledgement request',
+    upload_agreement: 'Uploaded renewal agreement',
+    punch_tcf: 'TCF created successfully',
     renew_pms: 'PMS subscription renewed',
     close_renewal: 'Renewal marked complete',
   };
@@ -305,10 +301,8 @@ function getStageLabel(stage: RenewalStage): string {
     negotiation_in_progress: 'Negotiation In Progress',
     proposal_sent: 'Proposal Sent',
     owner_acknowledged: 'Owner Acknowledged',
-    agreement_sent: 'Agreement Sent',
-    agreement_signed: 'Agreement Signed',
     agreement_uploaded: 'Agreement Uploaded',
-    tcf_completed: 'TCF Completed',
+    tcf_created: 'TCF Created',
     pms_renewed: 'PMS Renewed',
     renewal_completed: 'Completed',
     renewal_failed: 'Failed',

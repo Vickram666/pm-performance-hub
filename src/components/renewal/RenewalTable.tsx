@@ -1,10 +1,10 @@
-import { RenewalRecord, getNextAction, RENEWAL_STAGE_LABELS } from '@/types/renewal';
+import { RenewalRecord, getNextAction, RENEWAL_STAGE_LABELS, EscalationStatus, RenewalHealth, ESCALATION_REASON_LABELS } from '@/types/renewal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RenewalRiskBadge } from './RenewalRiskBadge';
 import { RenewalStageBadge } from './RenewalStageBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, User, TrendingDown, ChevronRight, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Calendar, User, ChevronRight, CheckCircle, XCircle, AlertTriangle, Clock, ShieldAlert, Activity } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -14,23 +14,50 @@ interface RenewalTableProps {
   onNextAction: (renewal: RenewalRecord, actionKey: string) => void;
 }
 
-// Sort renewals: Red → Amber → Green, then by days left ascending, then by pending owner action
 function sortRenewalsForCommandCenter(renewals: RenewalRecord[]): RenewalRecord[] {
   const riskOrder = { red: 0, amber: 1, green: 2 };
   return [...renewals].sort((a, b) => {
-    // First sort by risk level
     const riskDiff = riskOrder[a.status.riskLevel] - riskOrder[b.status.riskLevel];
     if (riskDiff !== 0) return riskDiff;
-    // Then by days left ascending
     const daysDiff = a.lease.daysToExpiry - b.lease.daysToExpiry;
     if (daysDiff !== 0) return daysDiff;
-    // Then by awaiting owner action
-    const aWaitingOwner = a.status.currentStage === 'proposal_sent' || a.status.currentStage === 'agreement_sent';
-    const bWaitingOwner = b.status.currentStage === 'proposal_sent' || b.status.currentStage === 'agreement_sent';
+    const aWaitingOwner = a.status.currentStage === 'proposal_sent';
+    const bWaitingOwner = b.status.currentStage === 'proposal_sent';
     if (aWaitingOwner && !bWaitingOwner) return -1;
     if (!aWaitingOwner && bWaitingOwner) return 1;
     return 0;
   });
+}
+
+function EscalationBadge({ status }: { status: EscalationStatus }) {
+  if (status === 'none') return <span className="text-xs text-muted-foreground">—</span>;
+  const config = {
+    yellow: { label: 'At Risk', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+    red: { label: 'Overdue', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+    critical: { label: 'Critical', className: 'bg-red-600/30 text-red-300 border-red-600/40' },
+  };
+  const c = config[status];
+  return (
+    <Badge variant="outline" className={`${c.className} text-xs`}>
+      <ShieldAlert className="h-3 w-3 mr-1" />
+      {c.label}
+    </Badge>
+  );
+}
+
+function HealthBadge({ health }: { health: RenewalHealth }) {
+  const config = {
+    green: { label: 'On Track', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+    yellow: { label: 'At Risk', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+    red: { label: 'Overdue', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  };
+  const c = config[health];
+  return (
+    <Badge variant="outline" className={`${c.className} text-xs`}>
+      <Activity className="h-3 w-3 mr-1" />
+      {c.label}
+    </Badge>
+  );
 }
 
 export function RenewalTable({ renewals, onRenewalClick, onNextAction }: RenewalTableProps) {
@@ -54,23 +81,18 @@ export function RenewalTable({ renewals, onRenewalClick, onNextAction }: Renewal
             <TableHead className="w-[180px]">Property</TableHead>
             <TableHead className="w-[100px]">PM</TableHead>
             <TableHead className="w-[90px]">Lease End</TableHead>
-            <TableHead className="w-[90px]">Renewal Open</TableHead>
             <TableHead className="w-[70px] text-center">Risk</TableHead>
             <TableHead className="w-[130px]">Stage</TableHead>
             <TableHead className="w-[160px]">Next Action</TableHead>
-            <TableHead className="w-[70px] text-center">Signed</TableHead>
-            <TableHead className="w-[70px] text-center">Uploaded</TableHead>
+            <TableHead className="w-[90px] text-center">Health</TableHead>
+            <TableHead className="w-[90px] text-center">Escalation</TableHead>
             <TableHead className="w-[150px]">Score Impact</TableHead>
             <TableHead className="w-[40px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedRenewals.map((renewal) => {
-            const nextAction = getNextAction(
-              renewal.status.currentStage,
-              renewal.status.agreementSigned,
-              renewal.status.agreementUploaded
-            );
+            const nextAction = getNextAction(renewal.status.currentStage);
             const impact = renewal.scoreImpact;
             const hasImpact = impact.currentPoints < 25;
             
@@ -83,7 +105,7 @@ export function RenewalTable({ renewals, onRenewalClick, onNextAction }: Renewal
                 }`}
                 onClick={() => onRenewalClick(renewal)}
               >
-                {/* Days Left - Big & Color-coded */}
+                {/* Days Left */}
                 <TableCell className="text-center">
                   <div className={`text-xl font-bold ${
                     renewal.lease.daysToExpiry <= 15 ? 'text-red-500' :
@@ -122,47 +144,23 @@ export function RenewalTable({ renewals, onRenewalClick, onNextAction }: Renewal
                   </div>
                 </TableCell>
                 
-                {/* Renewal Open Date */}
-                <TableCell>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <div className="text-sm text-muted-foreground">
-                        {format(parseISO(renewal.lease.renewalOpenDate), 'dd MMM')}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Renewal auto-opened on this date</p>
-                      <p className="text-xs text-muted-foreground">
-                        Notice period: {renewal.lease.noticePeriod} days
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TableCell>
-                
                 {/* Risk */}
                 <TableCell className="text-center">
                   <RenewalRiskBadge risk={renewal.status.riskLevel} size="sm" />
                 </TableCell>
                 
-                {/* Stage (read-only) */}
+                {/* Stage */}
                 <TableCell>
                   <RenewalStageBadge stage={renewal.status.currentStage} showIcon={false} />
                 </TableCell>
                 
-                {/* Next Action (Primary CTA) */}
+                {/* Next Action */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   {nextAction.disabled ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="text-xs px-2 py-1.5 rounded bg-muted text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {nextAction.label}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{nextAction.disabledReason}</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <div className="text-xs px-2 py-1.5 rounded bg-muted text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {nextAction.label}
+                    </div>
                   ) : (
                     <Button
                       size="sm"
@@ -175,22 +173,14 @@ export function RenewalTable({ renewals, onRenewalClick, onNextAction }: Renewal
                   )}
                 </TableCell>
                 
-                {/* Agreement Signed */}
+                {/* Health */}
                 <TableCell className="text-center">
-                  {renewal.status.agreementSigned ? (
-                    <CheckCircle className="h-4 w-4 text-emerald-500 mx-auto" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground mx-auto" />
-                  )}
+                  <HealthBadge health={renewal.status.renewalHealth} />
                 </TableCell>
-                
-                {/* Agreement Uploaded */}
+
+                {/* Escalation */}
                 <TableCell className="text-center">
-                  {renewal.status.agreementUploaded ? (
-                    <CheckCircle className="h-4 w-4 text-emerald-500 mx-auto" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground mx-auto" />
-                  )}
+                  <EscalationBadge status={renewal.status.escalationStatus} />
                 </TableCell>
                 
                 {/* Score Impact */}
