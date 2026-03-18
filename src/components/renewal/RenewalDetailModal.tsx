@@ -14,6 +14,7 @@ import { format, parseISO } from 'date-fns';
 import { useState } from 'react';
 import { OwnerAcknowledgementFlow } from './OwnerAcknowledgementFlow';
 import { AgreementUploadModal } from './AgreementUploadModal';
+import { FailedRenewalModal } from './FailedRenewalModal';
 
 interface RenewalDetailModalProps {
   renewal: RenewalRecord | null;
