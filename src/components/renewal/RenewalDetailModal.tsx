@@ -454,11 +454,57 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
             </Card>
           )}
 
+          {/* Mark as Failed */}
+          {renewal.status.currentStage !== 'renewal_completed' && renewal.status.currentStage !== 'renewal_failed' && (
+            <FailedRenewalModal
+              open={failedModalOpen}
+              onOpenChange={setFailedModalOpen}
+              renewal={renewal}
+              onConfirm={(reason, details) => {
+                const updated: RenewalRecord = {
+                  ...renewal,
+                  status: {
+                    ...renewal.status,
+                    currentStage: 'renewal_failed',
+                    lastActionDate: format(new Date(), 'yyyy-MM-dd'),
+                    stageEnteredAt: format(new Date(), 'yyyy-MM-dd'),
+                    renewalHealth: 'red',
+                    escalationStatus: 'critical',
+                  },
+                  scoreImpact: {
+                    ...renewal.scoreImpact,
+                    currentPoints: Math.max(0, renewal.scoreImpact.currentPoints - 15),
+                    deductions: renewal.scoreImpact.deductions.map(d =>
+                      d.reason === 'Forced move-out' ? { ...d, triggered: true } : d
+                    ),
+                    atRiskMessage: 'At risk of −15 pts (Forced move-out)',
+                  },
+                  actionLog: [
+                    ...renewal.actionLog,
+                    {
+                      id: `LOG${Date.now()}`,
+                      action: `Renewal marked FAILED — ${reason}`,
+                      actionBy: renewal.property.assignedPM,
+                      source: 'PM' as const,
+                      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+                      details,
+                      stageFrom: renewal.status.currentStage,
+                      stageTo: 'renewal_failed' as const,
+                    },
+                  ],
+                  updatedAt: format(new Date(), 'yyyy-MM-dd'),
+                };
+                onRenewalUpdate?.(updated);
+                setFailedModalOpen(false);
+              }}
+            />
+          )}
+
           {/* Next Action CTA */}
-          {!nextAction.disabled && (
-            <div className="sticky bottom-0 bg-background pt-4 border-t">
+          <div className="sticky bottom-0 bg-background pt-4 border-t flex gap-2">
+            {!nextAction.disabled && (
               <Button 
-                className="w-full gap-2" 
+                className="flex-1 gap-2" 
                 size="lg"
                 variant={renewal.status.riskLevel === 'red' ? 'destructive' : 'default'}
                 onClick={() => {
@@ -474,8 +520,19 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                 {nextAction.label}
                 <ArrowRight className="h-4 w-4" />
               </Button>
-            </div>
-          )}
+            )}
+            {renewal.status.currentStage !== 'renewal_completed' && renewal.status.currentStage !== 'renewal_failed' && (
+              <Button 
+                variant="outline"
+                size="lg"
+                className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={() => setFailedModalOpen(true)}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Mark Failed
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
