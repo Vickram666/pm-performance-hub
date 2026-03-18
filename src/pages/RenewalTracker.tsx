@@ -278,6 +278,7 @@ export default function RenewalTracker() {
         />
       </main>
     </div>
+    </PageTransition>
   );
 }
 
