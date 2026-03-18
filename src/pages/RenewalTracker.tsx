@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Users, BarChart3, Calendar, PieChart } from 'lucide-react';
+import { RefreshCw, Users, BarChart3, Calendar, PieChart } from 'lucide-react';
+import { PageTransition } from '@/components/layout/PageTransition';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RenewalFunnel } from '@/components/renewal/RenewalFunnel';
