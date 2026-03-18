@@ -27,6 +27,7 @@ interface RenewalDetailModalProps {
 export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, onNextAction }: RenewalDetailModalProps) {
   const [ackFlowOpen, setAckFlowOpen] = useState(false);
   const [agreementUploadOpen, setAgreementUploadOpen] = useState(false);
+  const [failedModalOpen, setFailedModalOpen] = useState(false);
 
   if (!renewal) return null;
 
