@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Users, BarChart3, Calendar, PieChart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useSearchParams } from 'react-router-dom';
+import { RefreshCw, Users, BarChart3, Calendar, PieChart } from 'lucide-react';
+import { PageTransition } from '@/components/layout/PageTransition';
+
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RenewalFunnel } from '@/components/renewal/RenewalFunnel';
 import { RenewalFilters } from '@/components/renewal/RenewalFilters';
@@ -173,16 +174,12 @@ export default function RenewalTracker() {
   }, []);
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b">
+      <header className="bg-card border-b">
         <div className="container py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                   <RefreshCw className="h-6 w-6 text-primary" />
@@ -194,35 +191,37 @@ export default function RenewalTracker() {
               </div>
             </div>
             
-            <NotificationBell 
-              onNotificationClick={(notification) => {
-                const renewal = renewals.find(r => r.id === notification.renewalId);
-                if (renewal) {
-                  setSelectedRenewal(renewal);
-                }
-              }}
-            />
-            
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-              <TabsList>
-                <TabsTrigger value="pm" className="gap-2">
-                  <Calendar className="h-4 w-4" />
-                  PM View
-                </TabsTrigger>
-                <TabsTrigger value="tl" className="gap-2">
-                  <Users className="h-4 w-4" />
-                  TL View
-                </TabsTrigger>
-                <TabsTrigger value="leadership" className="gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Leadership
-                </TabsTrigger>
-                <TabsTrigger value="analytics" className="gap-2">
-                  <PieChart className="h-4 w-4" />
-                  Analytics
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-3">
+              <NotificationBell 
+                onNotificationClick={(notification) => {
+                  const renewal = renewals.find(r => r.id === notification.renewalId);
+                  if (renewal) {
+                    setSelectedRenewal(renewal);
+                  }
+                }}
+              />
+              
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                <TabsList>
+                  <TabsTrigger value="pm" className="gap-2">
+                    <Calendar className="h-4 w-4" />
+                    PM View
+                  </TabsTrigger>
+                  <TabsTrigger value="tl" className="gap-2">
+                    <Users className="h-4 w-4" />
+                    TL View
+                  </TabsTrigger>
+                  <TabsTrigger value="leadership" className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Leadership
+                  </TabsTrigger>
+                  <TabsTrigger value="analytics" className="gap-2">
+                    <PieChart className="h-4 w-4" />
+                    Analytics
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </div>
       </header>
@@ -279,6 +278,7 @@ export default function RenewalTracker() {
         />
       </main>
     </div>
+    </PageTransition>
   );
 }
 
