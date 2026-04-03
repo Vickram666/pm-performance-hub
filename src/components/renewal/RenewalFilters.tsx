@@ -18,8 +18,7 @@ interface RenewalFiltersProps {
 export function RenewalFilters({ 
   filters, 
   onFiltersChange, 
-  cities, 
-  zones,
+  cities,
   activeFilterCount 
 }: RenewalFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
