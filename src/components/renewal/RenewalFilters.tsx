@@ -12,7 +12,6 @@ interface RenewalFiltersProps {
   filters: FiltersType;
   onFiltersChange: (filters: FiltersType) => void;
   cities: string[];
-  zones: string[];
   activeFilterCount: number;
 }
 
