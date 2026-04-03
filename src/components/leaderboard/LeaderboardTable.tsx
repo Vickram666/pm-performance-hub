@@ -151,7 +151,6 @@ export function LeaderboardTable({ entries, cityFilter }: LeaderboardTableProps)
             <TableHead className="w-[60px] text-center">Rank</TableHead>
             <TableHead>PM Name</TableHead>
             <TableHead>City</TableHead>
-            <TableHead>Zone</TableHead>
             <TableHead className="text-right font-bold bg-primary/5">
               Monthly Score
             </TableHead>
