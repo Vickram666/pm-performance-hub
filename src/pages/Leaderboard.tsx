@@ -11,7 +11,6 @@ import { LeaderboardFilters as FiltersType } from '@/types/leaderboard';
 export default function Leaderboard() {
   const [filters, setFilters] = useState<FiltersType>({
     city: null,
-    zone: null,
     scoreType: 'property',
     incentiveStatus: 'all',
     searchQuery: '',
@@ -22,7 +21,6 @@ export default function Leaderboard() {
   const filteredAndSortedPMs = useMemo(() => {
     let result = [...allPMs];
     if (filters.city) result = result.filter(pm => pm.city === filters.city);
-    if (filters.zone) result = result.filter(pm => pm.zone === filters.zone);
     if (filters.incentiveStatus !== 'all') result = result.filter(pm => pm.incentiveStatus === filters.incentiveStatus);
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
@@ -38,10 +36,6 @@ export default function Leaderboard() {
 
   const selectedCityStats = filters.city ? cityStats.find(c => c.city === filters.city) : null;
 
-  const handleZoneClick = (zone: string) => {
-    setFilters(prev => ({ ...prev, zone: prev.zone === zone ? null : zone }));
-  };
-
   const companyStats = useMemo(() => {
     const eligible = allPMs.filter(pm => pm.incentiveStatus === 'eligible').length;
     return {
@@ -54,7 +48,6 @@ export default function Leaderboard() {
   return (
     <PageTransition>
       <div className="min-h-screen bg-background">
-        {/* Page Header */}
         <header className="bg-card border-b">
           <div className="container py-5">
             <div className="flex items-center justify-between">
@@ -95,9 +88,9 @@ export default function Leaderboard() {
             <TabsContent value="all" className="space-y-4">
               <LeaderboardFilters filters={filters} onFiltersChange={setFilters} />
               {selectedCityStats && (
-                <CityStatsCard stats={selectedCityStats} onZoneClick={handleZoneClick} selectedZone={filters.zone} />
+                <CityStatsCard stats={selectedCityStats} />
               )}
-              <LeaderboardTable entries={filteredAndSortedPMs} cityFilter={filters.city} zoneFilter={filters.zone} />
+              <LeaderboardTable entries={filteredAndSortedPMs} cityFilter={filters.city} />
             </TabsContent>
 
             <TabsContent value="city" className="space-y-6">
@@ -106,8 +99,8 @@ export default function Leaderboard() {
                   <CityStatsCard
                     key={city.city}
                     stats={city}
-                    onZoneClick={(zone) => {
-                      setFilters(prev => ({ ...prev, city: city.city, zone }));
+                    onClick={() => {
+                      setFilters(prev => ({ ...prev, city: city.city }));
                       setActiveTab('all');
                     }}
                   />

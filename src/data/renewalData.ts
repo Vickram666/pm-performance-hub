@@ -281,7 +281,7 @@ export const allRenewals: RenewalRecord[] = Array.from({ length: 150 }, (_, i) =
 export function filterRenewals(renewals: RenewalRecord[], filters: RenewalFilters): RenewalRecord[] {
   return renewals.filter(renewal => {
     if (filters.city && renewal.property.city !== filters.city) return false;
-    if (filters.zone && renewal.property.zone !== filters.zone) return false;
+    
     if (filters.pmId && renewal.property.pmId !== filters.pmId) return false;
     if (filters.riskLevel && renewal.status.riskLevel !== filters.riskLevel) return false;
     if (filters.stage && renewal.status.currentStage !== filters.stage) return false;

@@ -237,7 +237,6 @@ export default function RenewalTracker() {
               filters={filters}
               onFiltersChange={setFilters}
               cities={cities}
-              zones={zones}
               activeFilterCount={activeFilterCount}
             />
             <RenewalTable

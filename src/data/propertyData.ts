@@ -15,7 +15,7 @@ const ownerNames = [
   'Sneha Verma', 'Vinod Chopra', 'Meena Bhatia', 'Ashok Malhotra', 'Geeta Saxena',
 ];
 
-const zones = ['North', 'South', 'East', 'West'];
+
 
 function getRandomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
