@@ -6,8 +6,7 @@ export interface PMLeaderboardEntry {
   id: string;
   name: string;
   city: string;
-  zone: string;
-  propertyScore: number; // Final Monthly Score (avg property health, 0-100)
+  propertyScore: number;
   payoutBand: PayoutBand;
   incentiveStatus: 'eligible' | 'partial' | 'blocked';
   portfolioSize: number;
