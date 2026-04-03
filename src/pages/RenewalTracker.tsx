@@ -61,10 +61,6 @@ export default function RenewalTracker() {
     [...new Set(renewals.map(r => r.property.city))].sort(),
     [renewals]
   );
-  const zones = useMemo(() => 
-    [...new Set(renewals.map(r => r.property.zone))].sort(),
-    [renewals]
-  );
 
   const filteredRenewals = useMemo(() => {
     let baseFilters = { ...filters };
