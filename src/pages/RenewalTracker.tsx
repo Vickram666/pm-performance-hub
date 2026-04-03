@@ -61,10 +61,6 @@ export default function RenewalTracker() {
     [...new Set(renewals.map(r => r.property.city))].sort(),
     [renewals]
   );
-  const zones = useMemo(() => 
-    [...new Set(renewals.map(r => r.property.zone))].sort(),
-    [renewals]
-  );
 
   const filteredRenewals = useMemo(() => {
     let baseFilters = { ...filters };
@@ -102,7 +98,6 @@ export default function RenewalTracker() {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.city) count++;
-    if (filters.zone) count++;
     if (filters.riskLevel) count++;
     if (filters.stage) count++;
     if (filters.expiryBucket && filters.expiryBucket !== 'all') count++;
@@ -242,7 +237,6 @@ export default function RenewalTracker() {
               filters={filters}
               onFiltersChange={setFilters}
               cities={cities}
-              zones={zones}
               activeFilterCount={activeFilterCount}
             />
             <RenewalTable

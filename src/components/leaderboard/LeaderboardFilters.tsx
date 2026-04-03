@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LeaderboardFilters as FiltersType, IncentiveFilter } from '@/types/leaderboard';
-import { getCitiesWithPMs, getZonesForCity } from '@/data/leaderboardData';
+import { getCitiesWithPMs } from '@/data/leaderboardData';
 
 interface LeaderboardFiltersProps {
   filters: FiltersType;
@@ -17,20 +17,11 @@ interface LeaderboardFiltersProps {
 
 export function LeaderboardFilters({ filters, onFiltersChange }: LeaderboardFiltersProps) {
   const cities = getCitiesWithPMs();
-  const zones = filters.city ? getZonesForCity(filters.city) : [];
 
   const handleCityChange = (value: string) => {
     onFiltersChange({
       ...filters,
       city: value === 'all' ? null : value,
-      zone: null, // Reset zone when city changes
-    });
-  };
-
-  const handleZoneChange = (value: string) => {
-    onFiltersChange({
-      ...filters,
-      zone: value === 'all' ? null : value,
     });
   };
 
@@ -50,7 +41,6 @@ export function LeaderboardFilters({ filters, onFiltersChange }: LeaderboardFilt
 
   return (
     <div className="flex flex-wrap gap-3 p-4 bg-card rounded-lg border">
-      {/* Search */}
       <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -61,7 +51,6 @@ export function LeaderboardFilters({ filters, onFiltersChange }: LeaderboardFilt
         />
       </div>
 
-      {/* City Filter */}
       <Select value={filters.city || 'all'} onValueChange={handleCityChange}>
         <SelectTrigger className="w-[140px]">
           <SelectValue placeholder="All Cities" />
@@ -76,26 +65,6 @@ export function LeaderboardFilters({ filters, onFiltersChange }: LeaderboardFilt
         </SelectContent>
       </Select>
 
-      {/* Zone Filter */}
-      <Select 
-        value={filters.zone || 'all'} 
-        onValueChange={handleZoneChange}
-        disabled={!filters.city}
-      >
-        <SelectTrigger className="w-[130px]">
-          <SelectValue placeholder="All Zones" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Zones</SelectItem>
-          {zones.map((zone) => (
-            <SelectItem key={zone} value={zone}>
-              {zone}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Payout Status Filter */}
       <Select value={filters.incentiveStatus} onValueChange={handleIncentiveChange}>
         <SelectTrigger className="w-[150px]">
           <SelectValue />

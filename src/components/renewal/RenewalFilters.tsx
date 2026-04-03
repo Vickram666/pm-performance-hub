@@ -12,15 +12,13 @@ interface RenewalFiltersProps {
   filters: FiltersType;
   onFiltersChange: (filters: FiltersType) => void;
   cities: string[];
-  zones: string[];
   activeFilterCount: number;
 }
 
 export function RenewalFilters({ 
   filters, 
   onFiltersChange, 
-  cities, 
-  zones,
+  cities,
   activeFilterCount 
 }: RenewalFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -93,20 +91,6 @@ export function RenewalFilters({
                   </SelectContent>
                 </Select>
 
-                <Select
-                  value={filters.zone || 'all'}
-                  onValueChange={(v) => onFiltersChange({ ...filters, zone: v === 'all' ? undefined : v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Zones</SelectItem>
-                    {zones.map(zone => (
-                      <SelectItem key={zone} value={zone}>{zone}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
 
                 <Select
                   value={filters.riskLevel || 'all'}

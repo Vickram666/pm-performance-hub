@@ -15,7 +15,7 @@ const ownerNames = [
   'Sneha Verma', 'Vinod Chopra', 'Meena Bhatia', 'Ashok Malhotra', 'Geeta Saxena',
 ];
 
-const zones = ['North', 'South', 'East', 'West'];
+
 
 function getRandomElement<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -282,7 +282,6 @@ function generateProperty(index: number): Property {
       propertyId: `P${String(index + 1).padStart(3, '0')}`,
       propertyName: `${getRandomElement(propertyNames)} ${Math.floor(Math.random() * 20) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 6))}`,
       city: 'Bangalore',
-      zone: getRandomElement(zones),
       ownerName: getRandomElement(ownerNames),
       tenantStatus: tenantStatus as 'occupied' | 'vacant',
     },

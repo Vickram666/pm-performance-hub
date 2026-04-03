@@ -90,9 +90,6 @@ export function PropertyDetailModal({ property, open, onClose }: PropertyDetailM
             <span>{property.basic.ownerName}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Zone:</span> {property.basic.zone}
-          </div>
-          <div>
             <Badge variant={property.basic.tenantStatus === 'occupied' ? 'default' : 'secondary'}>
               {property.basic.tenantStatus}
             </Badge>

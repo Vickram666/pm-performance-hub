@@ -95,10 +95,9 @@ function formatPillar(earned: number, max: number) {
 interface LeaderboardTableProps {
   entries: PMLeaderboardEntry[];
   cityFilter: string | null;
-  zoneFilter: string | null;
 }
 
-export function LeaderboardTable({ entries, cityFilter, zoneFilter }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, cityFilter }: LeaderboardTableProps) {
   const navigate = useNavigate();
 
   const getPercentileStyle = (percentile: number | undefined) => {
@@ -131,7 +130,6 @@ export function LeaderboardTable({ entries, cityFilter, zoneFilter }: Leaderboar
     const params = new URLSearchParams();
     params.set('pmId', pm.id);
     if (cityFilter) params.set('city', cityFilter);
-    if (zoneFilter) params.set('zone', zoneFilter);
     navigate(`/pm/${pm.id}?${params.toString()}`);
   };
 
@@ -153,7 +151,6 @@ export function LeaderboardTable({ entries, cityFilter, zoneFilter }: Leaderboar
             <TableHead className="w-[60px] text-center">Rank</TableHead>
             <TableHead>PM Name</TableHead>
             <TableHead>City</TableHead>
-            <TableHead>Zone</TableHead>
             <TableHead className="text-right font-bold bg-primary/5">
               Monthly Score
             </TableHead>
@@ -200,7 +197,6 @@ export function LeaderboardTable({ entries, cityFilter, zoneFilter }: Leaderboar
                 </div>
               </TableCell>
               <TableCell>{pm.city}</TableCell>
-              <TableCell>{pm.zone}</TableCell>
               <TableCell className="text-right tabular-nums font-bold bg-primary/5">
                 {pm.propertyScore}
               </TableCell>

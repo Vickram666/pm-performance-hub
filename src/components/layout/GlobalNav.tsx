@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, Trophy, Home, LayoutList, RefreshCw } from 'lucide-react';
+import { BarChart3, Trophy, Home, RefreshCw, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: BarChart3 },
@@ -11,6 +13,7 @@ const navItems = [
 
 export function GlobalNav() {
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -21,15 +24,15 @@ export function GlobalNav() {
     <nav className="sticky top-0 z-[60] bg-card/95 backdrop-blur-md border-b shadow-sm">
       <div className="container flex items-center justify-between h-14">
         {/* Brand */}
-        <Link to="/" className="flex items-center gap-2.5 group">
+        <Link to="/" className="flex items-center gap-2.5 group" onClick={() => setMobileOpen(false)}>
           <div className="w-8 h-8 rounded-lg bg-gradient-hero flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
             <BarChart3 className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:inline"><span className="font-bold text-lg tracking-tight hidden sm:inline">Azuro</span></span>
+          <span className="font-bold text-lg tracking-tight">Azuro</span>
         </Link>
 
-        {/* Nav Links */}
-        <div className="flex items-center gap-1">
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-1">
           {navItems.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
@@ -42,11 +45,45 @@ export function GlobalNav() {
               )}
             >
               <Icon className="h-4 w-4" />
-              <span className="hidden md:inline">{label}</span>
+              <span>{label}</span>
             </Link>
           ))}
         </div>
+
+        {/* Mobile hamburger */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-card animate-in slide-in-from-top-2 duration-200">
+          <div className="container py-2 space-y-1">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all',
+                  isActive(to)
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

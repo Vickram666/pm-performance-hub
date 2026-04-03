@@ -178,7 +178,7 @@ export function RenewalDetailModal({ renewal, open, onClose, onRenewalUpdate, on
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{renewal.property.city}, {renewal.property.zone}</span>
+                  <span>{renewal.property.city}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <User className="h-4 w-4 text-muted-foreground" />

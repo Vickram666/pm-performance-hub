@@ -102,7 +102,6 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
           <TableRow className="bg-muted/50">
             <TableHead className="w-[100px]">ID</TableHead>
             <TableHead>Property Name</TableHead>
-            <TableHead>Zone</TableHead>
             <TableHead className="text-center">Health Score</TableHead>
             <TableHead className="text-center">Rent Status</TableHead>
             <TableHead className="text-center">Renewal</TableHead>
@@ -126,7 +125,6 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
                   <p className="text-xs text-muted-foreground">{property.basic.ownerName}</p>
                 </div>
               </TableCell>
-              <TableCell>{property.basic.zone}</TableCell>
               <TableCell>
                 <div className="flex flex-col items-center gap-1">
                   <span className={cn(

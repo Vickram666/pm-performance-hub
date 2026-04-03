@@ -92,7 +92,6 @@ export interface RenewalPropertyDetails {
   propertyId: string;
   propertyName: string;
   city: string;
-  zone: string;
   assignedPM: string;
   pmId: string;
   configuration?: string; // e.g. "2BHK"
@@ -403,7 +402,6 @@ export interface RenewalFunnelStats {
 // Filters
 export interface RenewalFilters {
   city?: string;
-  zone?: string;
   pmId?: string;
   riskLevel?: RiskLevel;
   stage?: RenewalStage;

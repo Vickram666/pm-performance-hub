@@ -16,7 +16,6 @@ export default function PMDashboard() {
   const { pmId } = useParams();
   const [searchParams] = useSearchParams();
   const cityFilter = searchParams.get('city');
-  const zoneFilter = searchParams.get('zone');
   const [selectedMonth, setSelectedMonth] = useState('January 2025');
   const data = mockPMData;
   const scoreImpacts = generateScoreImpacts(data.propertyScore);
@@ -25,14 +24,13 @@ export default function PMDashboard() {
     ? mockHistoricalTrends.dataPoints[mockHistoricalTrends.dataPoints.length - 2].propertyScore 
     : data.finalMonthlyScore;
 
-  const backLink = cityFilter || zoneFilter 
-    ? `/leaderboard?city=${cityFilter || ''}&zone=${zoneFilter || ''}`
+  const backLink = cityFilter 
+    ? `/leaderboard?city=${cityFilter}`
     : '/leaderboard';
 
   return (
     <PageTransition>
       <div className="min-h-screen bg-background">
-        {/* Breadcrumb bar */}
         <div className="bg-card border-b">
           <div className="container py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
@@ -47,7 +45,7 @@ export default function PMDashboard() {
               </span>
               {cityFilter && (
                 <span className="text-xs text-muted-foreground ml-2">
-                  ({cityFilter}{zoneFilter && ` · ${zoneFilter}`})
+                  ({cityFilter})
                 </span>
               )}
             </div>
