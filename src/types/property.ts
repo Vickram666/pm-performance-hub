@@ -4,7 +4,6 @@ export interface PropertyBasicDetails {
   propertyId: string;
   propertyName: string;
   city: string;
-  zone: string;
   ownerName: string;
   tenantStatus: 'occupied' | 'vacant';
 }

@@ -125,7 +125,6 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
                   <p className="text-xs text-muted-foreground">{property.basic.ownerName}</p>
                 </div>
               </TableCell>
-              <TableCell>{property.basic.zone}</TableCell>
               <TableCell>
                 <div className="flex flex-col items-center gap-1">
                   <span className={cn(

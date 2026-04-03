@@ -402,7 +402,6 @@ export interface RenewalFunnelStats {
 // Filters
 export interface RenewalFilters {
   city?: string;
-  zone?: string;
   pmId?: string;
   riskLevel?: RiskLevel;
   stage?: RenewalStage;

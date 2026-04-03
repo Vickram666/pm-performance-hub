@@ -282,7 +282,6 @@ function generateProperty(index: number): Property {
       propertyId: `P${String(index + 1).padStart(3, '0')}`,
       propertyName: `${getRandomElement(propertyNames)} ${Math.floor(Math.random() * 20) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 6))}`,
       city: 'Bangalore',
-      zone: getRandomElement(zones),
       ownerName: getRandomElement(ownerNames),
       tenantStatus: tenantStatus as 'occupied' | 'vacant',
     },

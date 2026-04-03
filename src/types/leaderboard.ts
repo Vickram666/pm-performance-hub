@@ -26,7 +26,6 @@ export type IncentiveFilter = 'all' | 'eligible' | 'partial' | 'blocked';
 
 export interface LeaderboardFilters {
   city: string | null;
-  zone: string | null;
   scoreType: ScoreType;
   incentiveStatus: IncentiveFilter;
   searchQuery: string;

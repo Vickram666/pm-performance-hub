@@ -197,7 +197,6 @@ export function LeaderboardTable({ entries, cityFilter }: LeaderboardTableProps)
                 </div>
               </TableCell>
               <TableCell>{pm.city}</TableCell>
-              <TableCell>{pm.zone}</TableCell>
               <TableCell className="text-right tabular-nums font-bold bg-primary/5">
                 {pm.propertyScore}
               </TableCell>
