@@ -95,10 +95,9 @@ function formatPillar(earned: number, max: number) {
 interface LeaderboardTableProps {
   entries: PMLeaderboardEntry[];
   cityFilter: string | null;
-  zoneFilter: string | null;
 }
 
-export function LeaderboardTable({ entries, cityFilter, zoneFilter }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, cityFilter }: LeaderboardTableProps) {
   const navigate = useNavigate();
 
   const getPercentileStyle = (percentile: number | undefined) => {
