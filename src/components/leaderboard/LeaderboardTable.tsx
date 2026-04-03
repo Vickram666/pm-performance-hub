@@ -130,7 +130,6 @@ export function LeaderboardTable({ entries, cityFilter }: LeaderboardTableProps)
     const params = new URLSearchParams();
     params.set('pmId', pm.id);
     if (cityFilter) params.set('city', cityFilter);
-    if (zoneFilter) params.set('zone', zoneFilter);
     navigate(`/pm/${pm.id}?${params.toString()}`);
   };
 
