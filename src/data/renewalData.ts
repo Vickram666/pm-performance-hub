@@ -20,7 +20,7 @@ import {
 import { addDays, differenceInDays, format, subDays } from 'date-fns';
 
 const cities = ['Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Pune', 'Chennai'];
-const zones = ['North Zone', 'South Zone', 'East Zone', 'West Zone', 'Central Zone'];
+
 const pmNames = [
   'Priya Sharma', 'Rahul Gupta', 'Anita Patel', 'Vikram Singh', 
   'Deepa Nair', 'Amit Kumar', 'Sneha Reddy', 'Karthik Menon',
