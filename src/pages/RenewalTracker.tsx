@@ -98,7 +98,6 @@ export default function RenewalTracker() {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.city) count++;
-    if (filters.zone) count++;
     if (filters.riskLevel) count++;
     if (filters.stage) count++;
     if (filters.expiryBucket && filters.expiryBucket !== 'all') count++;
