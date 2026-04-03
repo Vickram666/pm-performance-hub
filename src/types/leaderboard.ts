@@ -19,14 +19,6 @@ export interface CityStats {
   avgPropertyScore: number;
   pmCount: number;
   eligiblePercent: number;
-  zones: ZoneStats[];
-}
-
-export interface ZoneStats {
-  zone: string;
-  avgPropertyScore: number;
-  pmCount: number;
-  eligiblePercent: number;
 }
 
 export type ScoreType = 'property'; // Only property score now
