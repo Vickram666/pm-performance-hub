@@ -134,7 +134,7 @@ function generateRenewalRecord(index: number): RenewalRecord {
       propertyId: `PROP${String(index + 1).padStart(4, '0')}`,
       propertyName: `${getRandomElement(propertyNames)} - ${getRandomInt(101, 999)}`,
       city: getRandomElement(cities),
-      zone: getRandomElement(zones),
+      
       assignedPM: pmName,
       pmId: pmId,
       configuration: getRandomElement(configurations),
