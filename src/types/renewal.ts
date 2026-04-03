@@ -92,7 +92,6 @@ export interface RenewalPropertyDetails {
   propertyId: string;
   propertyName: string;
   city: string;
-  zone: string;
   assignedPM: string;
   pmId: string;
   configuration?: string; // e.g. "2BHK"
