@@ -25,7 +25,7 @@ export function GlobalNav() {
           <div className="w-8 h-8 rounded-lg bg-gradient-hero flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
             <BarChart3 className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:inline">ScoreShine</span>
+          <span className="font-bold text-lg tracking-tight hidden sm:inline"><span className="font-bold text-lg tracking-tight hidden sm:inline">Azuro</span></span>
         </Link>
 
         {/* Nav Links */}
