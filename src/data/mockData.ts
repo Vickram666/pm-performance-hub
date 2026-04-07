@@ -7,7 +7,7 @@ export const mockPMData: MonthlyData = {
     id: 'pm-001',
     name: 'Priya Sharma',
     city: 'Bangalore',
-    zone: 'South Zone',
+    
     portfolioSize: 127,
   },
   propertyScore: {

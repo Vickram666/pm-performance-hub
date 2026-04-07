@@ -106,7 +106,7 @@ const Index = () => {
           <AwardsSection awards={data.awards} />
           <footer className="text-center py-8 text-sm text-muted-foreground">
             <p>PM Productivity Dashboard • Data updated monthly by Operations</p>
-            <p className="mt-1">Need help? Contact your Zone Manager</p>
+            <p className="mt-1">Need help? Contact your manager</p>
           </footer>
         </main>
       </div>

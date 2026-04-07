@@ -1,5 +1,5 @@
 import { PMProfile, EligibilityStatus, PayoutBand } from '@/types/dashboard';
-import { Building2, MapPin, Layers, Calendar, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Building2, MapPin, Calendar, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { monthOptions } from '@/data/mockData';
 
@@ -120,10 +120,6 @@ export const HeaderSummary = ({
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4" />
                 <span>{profile.city}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Layers className="w-4 h-4" />
-                <span>{profile.zone}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Building2 className="w-4 h-4" />
