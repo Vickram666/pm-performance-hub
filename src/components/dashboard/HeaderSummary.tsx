@@ -1,5 +1,5 @@
 import { PMProfile, EligibilityStatus, PayoutBand } from '@/types/dashboard';
-import { Building2, MapPin, Layers, Calendar, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Building2, MapPin, Calendar, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { monthOptions } from '@/data/mockData';
 
