@@ -232,6 +232,10 @@ export default function RenewalTracker() {
               needsActionToday={pmActionItems.needsActionToday}
               onRenewalClick={setSelectedRenewal}
             />
+            <RenewalTimeline
+              renewals={filteredRenewals}
+              onRenewalClick={setSelectedRenewal}
+            />
             <RenewalFunnel 
               stats={funnelStats} 
               onBucketClick={handleBucketClick}
@@ -255,7 +259,13 @@ export default function RenewalTracker() {
         )}
 
         {viewMode === 'leadership' && (
-          <LeadershipDashboard stats={leadershipStats} />
+          <>
+            <LeadershipDashboard stats={leadershipStats} />
+            <LeadershipExportView 
+              stats={leadershipStats}
+              bottomPMs={[...allPMs].sort((a, b) => a.propertyScore - b.propertyScore).slice(0, 10)}
+            />
+          </>
         )}
 
         {viewMode === 'analytics' && (
