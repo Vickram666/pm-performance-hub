@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, LayoutList, RefreshCw, TrendingUp, Users, Home, ArrowRight, Activity } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Trophy, RefreshCw, Home, ArrowRight } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { HeaderSummary } from '@/components/dashboard/HeaderSummary';
 import { PropertyScoreSection } from '@/components/dashboard/PropertyScoreSection';
 import { ScoreImpactPanel, generateScoreImpacts, generateQuickWins } from '@/components/dashboard/ScoreImpactPanel';
@@ -10,8 +9,14 @@ import { IncentiveSection } from '@/components/dashboard/IncentiveSection';
 import { CoachingSection } from '@/components/dashboard/CoachingSection';
 import { AwardsSection } from '@/components/dashboard/AwardsSection';
 import { HistoricalTrendsSection } from '@/components/dashboard/HistoricalTrendsSection';
+import { MyDayActionFeed } from '@/components/dashboard/MyDayActionFeed';
+import { ScoreSimulator } from '@/components/dashboard/ScoreSimulator';
+import { StreakIndicator } from '@/components/dashboard/StreakIndicator';
+import { SmartNotifications } from '@/components/renewal/SmartNotifications';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { mockPMData, mockHistoricalTrends } from '@/data/mockData';
+import { allProperties } from '@/data/propertyData';
+import { allRenewals } from '@/data/renewalData';
 
 const quickLinks = [
   {
@@ -88,7 +93,36 @@ const Index = () => {
 
         {/* Main Content */}
         <main className="container py-6 space-y-6">
+          {/* Streak & Momentum Indicators */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <StreakIndicator
+              dataPoints={mockHistoricalTrends.dataPoints}
+              trend={mockHistoricalTrends.trend}
+            />
+          </div>
+
+          {/* Smart Nudges */}
+          <SmartNotifications
+            renewals={allRenewals}
+            properties={allProperties}
+            currentScore={data.finalMonthlyScore}
+          />
+
+          {/* My Day — Priority Actions */}
+          <MyDayActionFeed 
+            properties={allProperties} 
+            renewals={allRenewals} 
+          />
+
           <PropertyScoreSection propertyScore={data.propertyScore} />
+
+          {/* Score Simulator */}
+          <ScoreSimulator
+            properties={allProperties}
+            currentScore={data.finalMonthlyScore}
+            currentPayoutBand={data.incentiveEligibility.payoutBand}
+          />
+
           <ScoreImpactPanel
             currentScore={data.finalMonthlyScore}
             previousScore={previousScore}
