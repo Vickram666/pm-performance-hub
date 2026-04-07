@@ -4,7 +4,6 @@ export interface PMProfile {
   id: string;
   name: string;
   city: string;
-  zone: string;
   portfolioSize: number;
 }
 

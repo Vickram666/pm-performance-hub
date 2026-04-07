@@ -126,7 +126,7 @@ export const HistoricalTrendsSection = ({ trends }: HistoricalTrendsSectionProps
               <>
                 <li>• Recent performance shows some decline - review coaching suggestions</li>
                 <li>• Focus on areas with biggest drops to recover quickly</li>
-                <li>• Consider reaching out to your Zone Manager for support</li>
+                <li>• Consider reaching out to your manager for support</li>
               </>
             )}
             {trends.trend === 'stable' && (
