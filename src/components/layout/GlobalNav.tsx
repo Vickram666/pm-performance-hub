@@ -1,19 +1,32 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, Trophy, Home, RefreshCw, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-
-const navItems = [
-  { to: '/', label: 'Dashboard', icon: BarChart3 },
-  { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-  { to: '/properties', label: 'Properties', icon: Home },
-  { to: '/renewals', label: 'Renewals', icon: RefreshCw },
-];
+import { Badge } from '@/components/ui/badge';
+import { allProperties } from '@/data/propertyData';
+import { allRenewals } from '@/data/renewalData';
 
 export function GlobalNav() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const counts = useMemo(() => {
+    const redRenewals = allRenewals.filter(
+      r => r.status.riskLevel === 'red' && 
+      r.status.currentStage !== 'renewal_completed' && 
+      r.status.currentStage !== 'renewal_failed'
+    ).length;
+    const highRiskProperties = allProperties.filter(p => p.riskLevel === 'high').length;
+    return { redRenewals, highRiskProperties };
+  }, []);
+
+  const navItems = [
+    { to: '/', label: 'Dashboard', icon: BarChart3, badge: 0 },
+    { to: '/leaderboard', label: 'Leaderboard', icon: Trophy, badge: 0 },
+    { to: '/properties', label: 'Properties', icon: Home, badge: counts.highRiskProperties },
+    { to: '/renewals', label: 'Renewals', icon: RefreshCw, badge: counts.redRenewals },
+  ];
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -33,12 +46,12 @@ export function GlobalNav() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-1">
-          {navItems.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, label, icon: Icon, badge }) => (
             <Link
               key={to}
               to={to}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative',
                 isActive(to)
                   ? 'bg-primary/10 text-primary shadow-sm'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
@@ -46,6 +59,11 @@ export function GlobalNav() {
             >
               <Icon className="h-4 w-4" />
               <span>{label}</span>
+              {badge > 0 && (
+                <Badge className="h-5 min-w-[20px] flex items-center justify-center p-0 px-1.5 text-[10px] bg-destructive text-destructive-foreground">
+                  {badge}
+                </Badge>
+              )}
             </Link>
           ))}
         </div>
@@ -65,7 +83,7 @@ export function GlobalNav() {
       {mobileOpen && (
         <div className="md:hidden border-t bg-card animate-in slide-in-from-top-2 duration-200">
           <div className="container py-2 space-y-1">
-            {navItems.map(({ to, label, icon: Icon }) => (
+            {navItems.map(({ to, label, icon: Icon, badge }) => (
               <Link
                 key={to}
                 to={to}
@@ -79,6 +97,11 @@ export function GlobalNav() {
               >
                 <Icon className="h-4 w-4" />
                 {label}
+                {badge > 0 && (
+                  <Badge className="h-5 min-w-[20px] flex items-center justify-center p-0 px-1.5 text-[10px] bg-destructive text-destructive-foreground ml-auto">
+                    {badge}
+                  </Badge>
+                )}
               </Link>
             ))}
           </div>

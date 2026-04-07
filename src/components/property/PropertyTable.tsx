@@ -1,16 +1,13 @@
-import { AlertCircle, CheckCircle, Clock, AlertTriangle, Home } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, AlertTriangle, Home, Zap } from 'lucide-react';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Property } from '@/types/property';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface PropertyTableProps {
   properties: Property[];
@@ -85,6 +82,36 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
     return <span className="text-sm text-muted-foreground">—</span>;
   };
 
+  const getQuickActions = (property: Property) => {
+    const actions: { label: string; variant: 'destructive' | 'outline'; action: string }[] = [];
+
+    if (!property.financial.onTimeRent && property.basic.tenantStatus === 'occupied') {
+      actions.push({ label: 'Fix Late Rent', variant: 'destructive', action: 'fix_rent' });
+    }
+    if (property.retention.daysToLeaseEnd <= 60 && !property.retention.renewalCompleted && !property.retention.renewalInitiated) {
+      actions.push({ label: 'Start Renewal', variant: 'outline', action: 'start_renewal' });
+    }
+    if (property.customerExperience.ownerRating < 3.5) {
+      actions.push({ label: 'Owner Follow-up', variant: 'outline', action: 'owner_followup' });
+    }
+    if (!property.operational.moveInReportCompleted || !property.operational.moveOutReportCompleted) {
+      actions.push({ label: 'Complete Report', variant: 'outline', action: 'complete_report' });
+    }
+
+    return actions.slice(0, 2); // Max 2 inline actions
+  };
+
+  const handleQuickAction = (e: React.MouseEvent, property: Property, action: string) => {
+    e.stopPropagation();
+    const messages: Record<string, string> = {
+      fix_rent: `Rent follow-up initiated for ${property.basic.propertyName}`,
+      start_renewal: `Renewal process started for ${property.basic.propertyName}`,
+      owner_followup: `Owner follow-up scheduled for ${property.basic.propertyName}`,
+      complete_report: `Report marked for completion — ${property.basic.propertyName}`,
+    };
+    toast.success(messages[action] || 'Action initiated');
+  };
+
   if (properties.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -106,61 +133,86 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
             <TableHead className="text-center">Rent Status</TableHead>
             <TableHead className="text-center">Renewal</TableHead>
             <TableHead className="text-center">Risk</TableHead>
+            <TableHead className="text-center">Quick Actions</TableHead>
             <TableHead className="text-right">Issues</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {properties.map((property) => (
-            <TableRow 
-              key={property.basic.propertyId}
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => onPropertyClick(property)}
-            >
-              <TableCell className="font-mono text-sm">
-                {property.basic.propertyId}
-              </TableCell>
-              <TableCell>
-                <div>
-                  <p className="font-medium">{property.basic.propertyName}</p>
-                  <p className="text-xs text-muted-foreground">{property.basic.ownerName}</p>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col items-center gap-1">
-                  <span className={cn(
-                    "font-bold tabular-nums",
-                    property.healthScore >= 70 && "text-success",
-                    property.healthScore >= 50 && property.healthScore < 70 && "text-warning",
-                    property.healthScore < 50 && "text-destructive"
-                  )}>
-                    {property.healthScore}
-                  </span>
-                  <Progress 
-                    value={property.healthScore} 
-                    className="h-1.5 w-16"
-                  />
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                {getRentStatus(property)}
-              </TableCell>
-              <TableCell className="text-center">
-                {getRenewalStatus(property)}
-              </TableCell>
-              <TableCell className="text-center">
-                {getRiskBadge(property.riskLevel)}
-              </TableCell>
-              <TableCell className="text-right">
-                {property.issues.length > 0 ? (
-                  <Badge variant="outline" className="text-destructive border-destructive">
-                    {property.issues.length}
-                  </Badge>
-                ) : (
-                  <span className="text-success">✓</span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+          {properties.map((property) => {
+            const quickActions = getQuickActions(property);
+            return (
+              <TableRow 
+                key={property.basic.propertyId}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => onPropertyClick(property)}
+              >
+                <TableCell className="font-mono text-sm">
+                  {property.basic.propertyId}
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <p className="font-medium">{property.basic.propertyName}</p>
+                    <p className="text-xs text-muted-foreground">{property.basic.ownerName}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className={cn(
+                      "font-bold tabular-nums",
+                      property.healthScore >= 70 && "text-success",
+                      property.healthScore >= 50 && property.healthScore < 70 && "text-warning",
+                      property.healthScore < 50 && "text-destructive"
+                    )}>
+                      {property.healthScore}
+                    </span>
+                    <Progress 
+                      value={property.healthScore} 
+                      className="h-1.5 w-16"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  {getRentStatus(property)}
+                </TableCell>
+                <TableCell className="text-center">
+                  {getRenewalStatus(property)}
+                </TableCell>
+                <TableCell className="text-center">
+                  {getRiskBadge(property.riskLevel)}
+                </TableCell>
+                <TableCell>
+                  {quickActions.length > 0 ? (
+                    <div className="flex items-center gap-1 justify-center" onClick={e => e.stopPropagation()}>
+                      {quickActions.map(qa => (
+                        <Button
+                          key={qa.action}
+                          size="sm"
+                          variant={qa.variant}
+                          className="text-[11px] h-6 px-2"
+                          onClick={(e) => handleQuickAction(e, property, qa.action)}
+                        >
+                          {qa.label}
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-success flex items-center justify-center gap-1">
+                      <CheckCircle className="h-3 w-3" /> OK
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {property.issues.length > 0 ? (
+                    <Badge variant="outline" className="text-destructive border-destructive">
+                      {property.issues.length}
+                    </Badge>
+                  ) : (
+                    <span className="text-success">✓</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
