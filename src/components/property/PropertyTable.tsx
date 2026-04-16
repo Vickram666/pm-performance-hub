@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Clock, AlertTriangle, Home, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock, AlertTriangle, Home, Zap, StickyNote } from 'lucide-react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -134,6 +134,7 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
             <TableHead className="text-center">Renewal</TableHead>
             <TableHead className="text-center">Risk</TableHead>
             <TableHead className="text-center">Quick Actions</TableHead>
+            <TableHead className="text-center">Notes</TableHead>
             <TableHead className="text-right">Issues</TableHead>
           </TableRow>
         </TableHeader>
@@ -199,6 +200,16 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
                     <span className="text-xs text-success flex items-center justify-center gap-1">
                       <CheckCircle className="h-3 w-3" /> OK
                     </span>
+                )}
+                </TableCell>
+                <TableCell className="text-center">
+                  {property.notes.length > 0 ? (
+                    <div className="flex items-center justify-center gap-1">
+                      <StickyNote className="h-3 w-3 text-primary" />
+                      <span className="text-xs">{property.notes.length}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-amber-500">—</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">

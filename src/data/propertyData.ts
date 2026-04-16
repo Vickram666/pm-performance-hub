@@ -1,4 +1,4 @@
-import { Property, PropertyAggregates, RiskLevel } from '@/types/property';
+import { Property, PropertyAggregates, RiskLevel, PropertyNote, PMPropertySummary, CityPropertyStats, PropertyAnalyticsStats } from '@/types/property';
 
 const propertyNames = [
   'Prestige Ozone', 'Brigade Gateway', 'Embassy Lake Terraces', 'Sobha Dream Acres',
@@ -263,6 +263,42 @@ function calculatePropertyScore(property: Omit<Property, 'healthScore' | 'riskLe
   };
 }
 
+const noteTexts = [
+  'Spoke with owner regarding maintenance concerns',
+  'Tenant requested AC repair - SR created',
+  'Rent reminder sent to tenant',
+  'Owner acknowledged renewal terms',
+  'Inspection scheduled for next week',
+  'Utility bill discrepancy resolved',
+  'Follow-up call with tenant completed',
+  'Owner app installation guided over call',
+  'Lease document uploaded after verification',
+  'Escalated to TL - owner unresponsive',
+];
+
+const noteTypes: PropertyNote['type'][] = ['general', 'escalation', 'follow-up', 'resolution'];
+
+const pmNames = [
+  'Priya Sharma', 'Rahul Patel', 'Ananya Singh', 'Vikram Kumar', 'Sneha Reddy',
+  'Arjun Nair', 'Kavya Iyer', 'Ravi Rao', 'Meera Gupta', 'Aditya Joshi',
+];
+
+const cities = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad', 'Pune'];
+
+function generateNotes(propertyId: string): PropertyNote[] {
+  const hasNotes = getRandomBoolean(0.65);
+  if (!hasNotes) return [];
+  const count = Math.floor(Math.random() * 3) + 1;
+  const now = new Date();
+  return Array.from({ length: count }, (_, i) => ({
+    id: `note-${propertyId}-${i}`,
+    text: getRandomElement(noteTexts),
+    createdBy: getRandomElement(pmNames),
+    createdAt: formatDate(addDays(now, -Math.floor(Math.random() * 30))),
+    type: getRandomElement(noteTypes),
+  }));
+}
+
 function generateProperty(index: number): Property {
   const now = new Date();
   const rentDueDate = new Date(now.getFullYear(), now.getMonth(), 5);
@@ -272,16 +308,18 @@ function generateProperty(index: number): Property {
     ? formatDate(addDays(rentDueDate, lateDays))
     : formatDate(addDays(rentDueDate, Math.floor(Math.random() * 3) - 1));
   
-  const daysToLeaseEnd = Math.floor(Math.random() * 180) - 30; // -30 to 150 days
+  const daysToLeaseEnd = Math.floor(Math.random() * 180) - 30;
   const leaseEndDate = formatDate(addDays(now, daysToLeaseEnd));
   
   const tenantStatus = getRandomBoolean(0.92) ? 'occupied' : 'vacant';
+  const propertyId = `P${String(index + 1).padStart(3, '0')}`;
+  const city = getRandomElement(cities);
   
   const propertyWithoutScores = {
     basic: {
-      propertyId: `P${String(index + 1).padStart(3, '0')}`,
+      propertyId,
       propertyName: `${getRandomElement(propertyNames)} ${Math.floor(Math.random() * 20) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 6))}`,
-      city: 'Bangalore',
+      city,
       ownerName: getRandomElement(ownerNames),
       tenantStatus: tenantStatus as 'occupied' | 'vacant',
     },
@@ -317,6 +355,7 @@ function generateProperty(index: number): Property {
       insuranceActive: getRandomBoolean(0.6),
       leaseAgreementUploaded: getRandomBoolean(0.85),
     },
+    notes: generateNotes(propertyId),
   };
   
   propertyWithoutScores.operational.srClosedWithinSLA = Math.floor(
@@ -396,4 +435,114 @@ export function filterProperties(
     
     return true;
   });
+}
+
+// PM-wise property summaries for TL view
+export function getPMPropertySummaries(properties: Property[]): PMPropertySummary[] {
+  const pmMap = new Map<string, Property[]>();
+  
+  // Assign properties to PMs round-robin style
+  const pmList = pmNames.map((name, i) => ({ id: `PM${String(i + 1).padStart(3, '0')}`, name, city: cities[i % cities.length] }));
+  
+  properties.forEach((p, i) => {
+    const pm = pmList[i % pmList.length];
+    if (!pmMap.has(pm.id)) pmMap.set(pm.id, []);
+    pmMap.get(pm.id)!.push(p);
+  });
+
+  return pmList.map(pm => {
+    const props = pmMap.get(pm.id) || [];
+    const highRisk = props.filter(p => p.riskLevel === 'high').length;
+    const lateRent = props.filter(p => !p.financial.onTimeRent && p.financial.lateDays > 5).length;
+    const renewalDue = props.filter(p => p.retention.daysToLeaseEnd <= 60 && !p.retention.renewalCompleted).length;
+    const notesCount = props.reduce((sum, p) => sum + p.notes.length, 0);
+    const withoutNotes = props.filter(p => p.notes.length === 0).length;
+    
+    return {
+      pmId: pm.id,
+      pmName: pm.name,
+      city: pm.city,
+      totalProperties: props.length,
+      avgScore: props.length > 0 ? Math.round(props.reduce((s, p) => s + p.healthScore, 0) / props.length * 10) / 10 : 0,
+      highRiskCount: highRisk,
+      lateRentCount: lateRent,
+      renewalDueCount: renewalDue,
+      notesCount,
+      propertiesWithoutNotes: withoutNotes,
+      interventionRequired: highRisk >= 3 || lateRent >= 3,
+    };
+  });
+}
+
+// City-wise stats for Leadership view
+export function getCityPropertyStats(properties: Property[]): CityPropertyStats[] {
+  const cityMap = new Map<string, Property[]>();
+  properties.forEach(p => {
+    if (!cityMap.has(p.basic.city)) cityMap.set(p.basic.city, []);
+    cityMap.get(p.basic.city)!.push(p);
+  });
+
+  return Array.from(cityMap.entries()).map(([city, props]) => ({
+    city,
+    totalProperties: props.length,
+    avgScore: Math.round(props.reduce((s, p) => s + p.healthScore, 0) / props.length * 10) / 10,
+    highRiskCount: props.filter(p => p.riskLevel === 'high').length,
+    lateRentCount: props.filter(p => !p.financial.onTimeRent && p.financial.lateDays > 5).length,
+    renewalDueCount: props.filter(p => p.retention.daysToLeaseEnd <= 60 && !p.retention.renewalCompleted).length,
+    notesUpdated: props.filter(p => p.notes.length > 0).length,
+    notesNotUpdated: props.filter(p => p.notes.length === 0).length,
+  })).sort((a, b) => b.totalProperties - a.totalProperties);
+}
+
+// Analytics stats
+export function getPropertyAnalyticsStats(properties: Property[]): PropertyAnalyticsStats {
+  const scoreRanges = ['0-30', '31-50', '51-70', '71-85', '86-100'];
+  const scoreDistribution = scoreRanges.map(range => {
+    const [min, max] = range.split('-').map(Number);
+    return { range, count: properties.filter(p => p.healthScore >= min && p.healthScore <= max).length };
+  });
+
+  const riskDistribution = [
+    { level: 'Low', count: properties.filter(p => p.riskLevel === 'low').length },
+    { level: 'Medium', count: properties.filter(p => p.riskLevel === 'medium').length },
+    { level: 'High', count: properties.filter(p => p.riskLevel === 'high').length },
+  ];
+
+  const pillarAverages = [
+    { pillar: 'Operations', avg: Math.round(properties.reduce((s, p) => s + p.scoreBreakdown.operations, 0) / properties.length * 10) / 10, max: 40 },
+    { pillar: 'Financial', avg: Math.round(properties.reduce((s, p) => s + p.scoreBreakdown.financial, 0) / properties.length * 10) / 10, max: 15 },
+    { pillar: 'Customer Exp', avg: Math.round(properties.reduce((s, p) => s + p.scoreBreakdown.customerExperience, 0) / properties.length * 10) / 10, max: 25 },
+    { pillar: 'Ecosystem', avg: Math.round(properties.reduce((s, p) => s + p.scoreBreakdown.ecosystem, 0) / properties.length * 10) / 10, max: 20 },
+  ];
+
+  const cityMap = new Map<string, Property[]>();
+  properties.forEach(p => {
+    if (!cityMap.has(p.basic.city)) cityMap.set(p.basic.city, []);
+    cityMap.get(p.basic.city)!.push(p);
+  });
+  const cityWiseScores = Array.from(cityMap.entries()).map(([city, props]) => ({
+    city,
+    avgScore: Math.round(props.reduce((s, p) => s + p.healthScore, 0) / props.length * 10) / 10,
+    count: props.length,
+  }));
+
+  const withNotes = properties.filter(p => p.notes.length > 0).length;
+  const totalNotes = properties.reduce((s, p) => s + p.notes.length, 0);
+
+  const months = ['Oct 2024', 'Nov 2024', 'Dec 2024', 'Jan 2025', 'Feb 2025', 'Mar 2025'];
+  const monthlyScoreTrend = months.map((month, i) => ({
+    month,
+    avgScore: Math.round((62 + i * 2.5 + Math.random() * 3) * 10) / 10,
+  }));
+
+  return {
+    totalProperties: properties.length,
+    avgScore: Math.round(properties.reduce((s, p) => s + p.healthScore, 0) / properties.length * 10) / 10,
+    scoreDistribution,
+    riskDistribution,
+    pillarAverages,
+    cityWiseScores,
+    notesStats: { withNotes, withoutNotes: properties.length - withNotes, totalNotes },
+    monthlyScoreTrend,
+  };
 }
