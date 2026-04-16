@@ -1,4 +1,4 @@
-import { Property, PropertyAggregates, RiskLevel } from '@/types/property';
+import { Property, PropertyAggregates, RiskLevel, PropertyNote, PMPropertySummary, CityPropertyStats, PropertyAnalyticsStats } from '@/types/property';
 
 const propertyNames = [
   'Prestige Ozone', 'Brigade Gateway', 'Embassy Lake Terraces', 'Sobha Dream Acres',
@@ -263,6 +263,42 @@ function calculatePropertyScore(property: Omit<Property, 'healthScore' | 'riskLe
   };
 }
 
+const noteTexts = [
+  'Spoke with owner regarding maintenance concerns',
+  'Tenant requested AC repair - SR created',
+  'Rent reminder sent to tenant',
+  'Owner acknowledged renewal terms',
+  'Inspection scheduled for next week',
+  'Utility bill discrepancy resolved',
+  'Follow-up call with tenant completed',
+  'Owner app installation guided over call',
+  'Lease document uploaded after verification',
+  'Escalated to TL - owner unresponsive',
+];
+
+const noteTypes: PropertyNote['type'][] = ['general', 'escalation', 'follow-up', 'resolution'];
+
+const pmNames = [
+  'Priya Sharma', 'Rahul Patel', 'Ananya Singh', 'Vikram Kumar', 'Sneha Reddy',
+  'Arjun Nair', 'Kavya Iyer', 'Ravi Rao', 'Meera Gupta', 'Aditya Joshi',
+];
+
+const cities = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad', 'Pune'];
+
+function generateNotes(propertyId: string): PropertyNote[] {
+  const hasNotes = getRandomBoolean(0.65);
+  if (!hasNotes) return [];
+  const count = Math.floor(Math.random() * 3) + 1;
+  const now = new Date();
+  return Array.from({ length: count }, (_, i) => ({
+    id: `note-${propertyId}-${i}`,
+    text: getRandomElement(noteTexts),
+    createdBy: getRandomElement(pmNames),
+    createdAt: formatDate(addDays(now, -Math.floor(Math.random() * 30))),
+    type: getRandomElement(noteTypes),
+  }));
+}
+
 function generateProperty(index: number): Property {
   const now = new Date();
   const rentDueDate = new Date(now.getFullYear(), now.getMonth(), 5);
@@ -272,16 +308,18 @@ function generateProperty(index: number): Property {
     ? formatDate(addDays(rentDueDate, lateDays))
     : formatDate(addDays(rentDueDate, Math.floor(Math.random() * 3) - 1));
   
-  const daysToLeaseEnd = Math.floor(Math.random() * 180) - 30; // -30 to 150 days
+  const daysToLeaseEnd = Math.floor(Math.random() * 180) - 30;
   const leaseEndDate = formatDate(addDays(now, daysToLeaseEnd));
   
   const tenantStatus = getRandomBoolean(0.92) ? 'occupied' : 'vacant';
+  const propertyId = `P${String(index + 1).padStart(3, '0')}`;
+  const city = getRandomElement(cities);
   
   const propertyWithoutScores = {
     basic: {
-      propertyId: `P${String(index + 1).padStart(3, '0')}`,
+      propertyId,
       propertyName: `${getRandomElement(propertyNames)} ${Math.floor(Math.random() * 20) + 1}${String.fromCharCode(65 + Math.floor(Math.random() * 6))}`,
-      city: 'Bangalore',
+      city,
       ownerName: getRandomElement(ownerNames),
       tenantStatus: tenantStatus as 'occupied' | 'vacant',
     },
@@ -317,6 +355,7 @@ function generateProperty(index: number): Property {
       insuranceActive: getRandomBoolean(0.6),
       leaseAgreementUploaded: getRandomBoolean(0.85),
     },
+    notes: generateNotes(propertyId),
   };
   
   propertyWithoutScores.operational.srClosedWithinSLA = Math.floor(
