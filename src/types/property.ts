@@ -62,6 +62,14 @@ export interface PropertyIssue {
   recoveryPoints: number;
 }
 
+export interface PropertyNote {
+  id: string;
+  text: string;
+  createdBy: string;
+  createdAt: string;
+  type: 'general' | 'escalation' | 'follow-up' | 'resolution';
+}
+
 export type RiskLevel = 'low' | 'medium' | 'high';
 
 export interface Property {
@@ -75,6 +83,43 @@ export interface Property {
   healthScore: number;
   riskLevel: RiskLevel;
   issues: PropertyIssue[];
+  notes: PropertyNote[];
+}
+
+export interface PMPropertySummary {
+  pmId: string;
+  pmName: string;
+  city: string;
+  totalProperties: number;
+  avgScore: number;
+  highRiskCount: number;
+  lateRentCount: number;
+  renewalDueCount: number;
+  notesCount: number;
+  propertiesWithoutNotes: number;
+  interventionRequired: boolean;
+}
+
+export interface CityPropertyStats {
+  city: string;
+  totalProperties: number;
+  avgScore: number;
+  highRiskCount: number;
+  lateRentCount: number;
+  renewalDueCount: number;
+  notesUpdated: number;
+  notesNotUpdated: number;
+}
+
+export interface PropertyAnalyticsStats {
+  totalProperties: number;
+  avgScore: number;
+  scoreDistribution: { range: string; count: number }[];
+  riskDistribution: { level: string; count: number }[];
+  pillarAverages: { pillar: string; avg: number; max: number }[];
+  cityWiseScores: { city: string; avgScore: number; count: number }[];
+  notesStats: { withNotes: number; withoutNotes: number; totalNotes: number };
+  monthlyScoreTrend: { month: string; avgScore: number }[];
 }
 
 export interface PropertyFilters {
