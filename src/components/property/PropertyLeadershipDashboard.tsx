@@ -40,8 +40,8 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-blue-500/20">
-                <Home className="h-6 w-6 text-blue-400" />
+              <div className="p-3 rounded-lg bg-primary/10">
+                <Home className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Properties</p>
@@ -54,7 +54,7 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-destructive/20">
+              <div className="p-3 rounded-lg bg-destructive/10">
                 <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
               <div>
@@ -68,12 +68,12 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-amber-500/20">
-                <StickyNote className="h-6 w-6 text-amber-500" />
+              <div className="p-3 rounded-lg bg-warning/10">
+                <StickyNote className="h-6 w-6 text-warning" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Notes Not Updated</p>
-                <p className="text-2xl font-bold text-amber-500">{totalNotesNotUpdated}</p>
+                <p className="text-2xl font-bold text-warning">{totalNotesNotUpdated}</p>
                 <p className="text-xs text-muted-foreground">of {totalProperties} properties</p>
               </div>
             </div>
@@ -121,7 +121,7 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
                   </TableCell>
                   <TableCell className="text-center">
                     {city.highRiskCount > 5 ? (
-                      <Badge variant="outline" className="bg-destructive/20 text-destructive border-destructive/30">
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                         {city.highRiskCount}
                       </Badge>
                     ) : (
@@ -136,7 +136,7 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
                       <span className="text-muted-foreground">/</span>
                       <span>{city.totalProperties}</span>
                       {city.notesNotUpdated > 5 && (
-                        <Badge variant="outline" className="ml-1 bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
+                        <Badge variant="outline" className="ml-1 bg-warning/10 text-warning border-warning/20 text-[10px]">
                           {city.notesNotUpdated} missing
                         </Badge>
                       )}
@@ -144,17 +144,17 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
                   </TableCell>
                   <TableCell className="text-center">
                     {city.avgScore >= 70 ? (
-                      <Badge variant="outline" className="bg-success/20 text-success border-success/30">
+                      <Badge variant="outline" className="bg-success/10 text-success border-success/20">
                         <TrendingUp className="h-3 w-3 mr-1" />
                         Excellent
                       </Badge>
                     ) : city.avgScore >= 50 ? (
-                      <Badge variant="outline" className="bg-warning/20 text-warning border-warning/30">
+                      <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         Needs Attention
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-destructive/20 text-destructive border-destructive/30">
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                         <TrendingDown className="h-3 w-3 mr-1" />
                         Critical
                       </Badge>
