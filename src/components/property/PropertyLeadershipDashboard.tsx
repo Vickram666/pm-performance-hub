@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { CityPropertyStats } from '@/types/property';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,6 +8,10 @@ import {
   Globe, Building, TrendingUp, TrendingDown, AlertTriangle, 
   StickyNote, Home, Target 
 } from 'lucide-react';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type CitySortKey = 'city' | 'count' | 'score' | 'highRisk' | 'lateRent' | 'renewal' | 'pendingNotes' | 'status';
 
 interface PropertyLeadershipDashboardProps {
   cityStats: CityPropertyStats[];
