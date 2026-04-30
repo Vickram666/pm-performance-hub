@@ -210,14 +210,14 @@ export function PropertyAnalyticsDashboard({ stats }: PropertyAnalyticsDashboard
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Pillar</TableHead>
-                <TableHead className="text-center">Max</TableHead>
-                <TableHead>Avg Score</TableHead>
-                <TableHead className="text-center">Achievement</TableHead>
+                <TableHead><SortableHeader label="Pillar" sortKey="pillar" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Max" sortKey="max" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} align="center" /></TableHead>
+                <TableHead><SortableHeader label="Avg Score" sortKey="avg" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Achievement" sortKey="pct" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} align="center" /></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stats.pillarAverages.map(p => {
+              {pillarSort.sortedItems.map(p => {
                 const pct = Math.round((p.avg / p.max) * 100);
                 return (
                   <TableRow key={p.pillar}>
