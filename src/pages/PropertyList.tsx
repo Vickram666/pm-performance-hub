@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Home, User, Calendar, Users, BarChart3, PieChart } from 'lucide-react';
 import { PropertyFilters } from '@/components/property/PropertyFilters';
@@ -16,18 +16,50 @@ import { mockPMData } from '@/data/mockData';
 
 type ViewMode = 'pm' | 'tl' | 'leadership' | 'analytics';
 
+const FILTER_STORAGE_KEY = 'azuro:property-filters';
+const VIEW_STORAGE_KEY = 'azuro:property-view';
+
+const DEFAULT_FILTERS: FiltersType = {
+  scoreRange: [0, 100],
+  lateRentOnly: false,
+  renewalDueDays: null,
+  lowOwnerRating: false,
+  searchQuery: '',
+};
+
+function loadFilters(): FiltersType {
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_FILTERS, ...parsed };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
+}
+
+function loadView(): ViewMode {
+  try {
+    const v = sessionStorage.getItem(VIEW_STORAGE_KEY) as ViewMode | null;
+    if (v && ['pm', 'tl', 'leadership', 'analytics'].includes(v)) return v;
+  } catch {}
+  return 'pm';
+}
+
 export default function PropertyList() {
   const [searchParams] = useSearchParams();
   const pmId = searchParams.get('pmId');
-  const [viewMode, setViewMode] = useState<ViewMode>('pm');
-  const [filters, setFilters] = useState<FiltersType>({
-    scoreRange: [0, 100],
-    lateRentOnly: false,
-    renewalDueDays: null,
-    lowOwnerRating: false,
-    searchQuery: '',
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>(loadView);
+  const [filters, setFilters] = useState<FiltersType>(loadFilters);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+
+  // Persist filters & view across tab switches and route navigation
+  useEffect(() => {
+    try { sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters)); } catch {}
+  }, [filters]);
+  useEffect(() => {
+    try { sessionStorage.setItem(VIEW_STORAGE_KEY, viewMode); } catch {}
+  }, [viewMode]);
 
   const filteredProperties = useMemo(() => filterProperties(allProperties, filters), [filters]);
   const aggregates = useMemo(() => getPropertyAggregates(filteredProperties), [filteredProperties]);

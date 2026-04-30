@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { AlertCircle, CheckCircle, Clock, AlertTriangle, Home, Zap, StickyNote } from 'lucide-react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -8,6 +9,10 @@ import { Progress } from '@/components/ui/progress';
 import { Property } from '@/types/property';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type PropertySortKey = 'id' | 'name' | 'score' | 'rent' | 'renewal' | 'risk' | 'notes' | 'issues';
 
 interface PropertyTableProps {
   properties: Property[];
@@ -15,6 +20,22 @@ interface PropertyTableProps {
 }
 
 export function PropertyTable({ properties, onPropertyClick }: PropertyTableProps) {
+  const accessors = useMemo(() => ({
+    id: (p: Property) => p.basic.propertyId,
+    name: (p: Property) => p.basic.propertyName,
+    score: (p: Property) => p.healthScore,
+    rent: (p: Property) => p.financial.onTimeRent ? 0 : p.financial.lateDays,
+    renewal: (p: Property) => p.retention.renewalCompleted ? 9999 : p.retention.daysToLeaseEnd,
+    risk: (p: Property) => ({ low: 0, medium: 1, high: 2 }[p.riskLevel]),
+    notes: (p: Property) => p.notes.length,
+    issues: (p: Property) => p.issues.length,
+  }), []);
+
+  const { sortedItems, sortConfig, requestSort } = useSortableData<Property, PropertySortKey>(
+    properties,
+    accessors,
+    { key: 'score', direction: 'asc' }, // default: lowest score first (worst)
+  );
   const getRiskBadge = (riskLevel: Property['riskLevel']) => {
     switch (riskLevel) {
       case 'low':
@@ -127,19 +148,35 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>Property Name</TableHead>
-            <TableHead className="text-center">Health Score</TableHead>
-            <TableHead className="text-center">Rent Status</TableHead>
-            <TableHead className="text-center">Renewal</TableHead>
-            <TableHead className="text-center">Risk</TableHead>
+            <TableHead className="w-[100px]">
+              <SortableHeader label="ID" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
+            </TableHead>
+            <TableHead>
+              <SortableHeader label="Property Name" sortKey="name" sortConfig={sortConfig} onSort={requestSort} />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Health Score" sortKey="score" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Rent Status" sortKey="rent" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Renewal" sortKey="renewal" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Risk" sortKey="risk" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
             <TableHead className="text-center">Quick Actions</TableHead>
-            <TableHead className="text-center">Notes</TableHead>
-            <TableHead className="text-right">Issues</TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Notes" sortKey="notes" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-right">
+              <SortableHeader label="Issues" sortKey="issues" sortConfig={sortConfig} onSort={requestSort} align="right" />
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {properties.map((property) => {
+          {sortedItems.map((property) => {
             const quickActions = getQuickActions(property);
             return (
               <TableRow 

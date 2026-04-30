@@ -11,6 +11,11 @@ import {
   TrendingUp, Home, Target, StickyNote, BarChart3, PieChart as PieChartIcon
 } from 'lucide-react';
 import type { PropertyAnalyticsStats } from '@/types/property';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type PillarRow = PropertyAnalyticsStats['pillarAverages'][number];
+type PillarSortKey = 'pillar' | 'max' | 'avg' | 'pct';
 
 interface PropertyAnalyticsDashboardProps {
   stats: PropertyAnalyticsStats;
@@ -22,6 +27,16 @@ const COLORS = [
 ];
 
 export function PropertyAnalyticsDashboard({ stats }: PropertyAnalyticsDashboardProps) {
+  const pillarAccessors = useMemo(() => ({
+    pillar: (r: PillarRow) => r.pillar,
+    max: (r: PillarRow) => r.max,
+    avg: (r: PillarRow) => r.avg,
+    pct: (r: PillarRow) => r.max > 0 ? r.avg / r.max : 0,
+  }), []);
+  const pillarSort = useSortableData<PillarRow, PillarSortKey>(
+    stats.pillarAverages, pillarAccessors, { key: 'pct', direction: 'asc' },
+  );
+
   return (
     <div className="space-y-6">
       {/* KPIs */}
@@ -195,14 +210,14 @@ export function PropertyAnalyticsDashboard({ stats }: PropertyAnalyticsDashboard
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Pillar</TableHead>
-                <TableHead className="text-center">Max</TableHead>
-                <TableHead>Avg Score</TableHead>
-                <TableHead className="text-center">Achievement</TableHead>
+                <TableHead><SortableHeader label="Pillar" sortKey="pillar" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Max" sortKey="max" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} align="center" /></TableHead>
+                <TableHead><SortableHeader label="Avg Score" sortKey="avg" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Achievement" sortKey="pct" sortConfig={pillarSort.sortConfig} onSort={pillarSort.requestSort} align="center" /></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stats.pillarAverages.map(p => {
+              {pillarSort.sortedItems.map(p => {
                 const pct = Math.round((p.avg / p.max) * 100);
                 return (
                   <TableRow key={p.pillar}>

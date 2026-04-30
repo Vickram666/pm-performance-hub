@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { CityPropertyStats } from '@/types/property';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,6 +8,10 @@ import {
   Globe, Building, TrendingUp, TrendingDown, AlertTriangle, 
   StickyNote, Home, Target 
 } from 'lucide-react';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type CitySortKey = 'city' | 'count' | 'score' | 'highRisk' | 'lateRent' | 'renewal' | 'pendingNotes' | 'status';
 
 interface PropertyLeadershipDashboardProps {
   cityStats: CityPropertyStats[];
@@ -18,6 +23,20 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
   const totalHighRisk = cityStats.reduce((s, c) => s + c.highRiskCount, 0);
   const totalNotesNotUpdated = cityStats.reduce((s, c) => s + c.notesNotUpdated, 0);
   const totalLateRent = cityStats.reduce((s, c) => s + c.lateRentCount, 0);
+
+  const accessors = useMemo(() => ({
+    city: (r: CityPropertyStats) => r.city,
+    count: (r: CityPropertyStats) => r.totalProperties,
+    score: (r: CityPropertyStats) => r.avgScore,
+    highRisk: (r: CityPropertyStats) => r.highRiskCount,
+    lateRent: (r: CityPropertyStats) => r.lateRentCount,
+    renewal: (r: CityPropertyStats) => r.renewalDueCount,
+    pendingNotes: (r: CityPropertyStats) => r.notesNotUpdated,
+    status: (r: CityPropertyStats) => r.avgScore,
+  }), []);
+  const { sortedItems, sortConfig, requestSort } = useSortableData<CityPropertyStats, CitySortKey>(
+    cityStats, accessors, { key: 'score', direction: 'asc' },
+  );
 
   return (
     <div className="space-y-6">
@@ -93,18 +112,18 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>City</TableHead>
-                <TableHead className="text-center">Properties</TableHead>
-                <TableHead>Avg Score</TableHead>
-                <TableHead className="text-center">🔴 High Risk</TableHead>
-                <TableHead className="text-center">Late Rent</TableHead>
-                <TableHead className="text-center">Renewal Due</TableHead>
-                <TableHead className="text-center">Notes Updated</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead><SortableHeader label="City" sortKey="city" sortConfig={sortConfig} onSort={requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Properties" sortKey="count" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead><SortableHeader label="Avg Score" sortKey="score" sortConfig={sortConfig} onSort={requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="🔴 High Risk" sortKey="highRisk" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Late Rent" sortKey="lateRent" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Renewal Due" sortKey="renewal" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Pending Notes" sortKey="pendingNotes" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cityStats.map(city => (
+              {sortedItems.map(city => (
                 <TableRow key={city.city}>
                   <TableCell className="font-medium">{city.city}</TableCell>
                   <TableCell className="text-center">{city.totalProperties}</TableCell>

@@ -1,9 +1,14 @@
+import { useMemo } from 'react';
 import { PMPropertySummary } from '@/types/property';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, AlertTriangle, CheckCircle, TrendingUp, StickyNote } from 'lucide-react';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type TLSortKey = 'pm' | 'count' | 'score' | 'highRisk' | 'lateRent' | 'renewal' | 'pendingNotes' | 'status';
 
 interface PropertyTLDashboardProps {
   pmSummaries: PMPropertySummary[];
@@ -13,6 +18,20 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
   const totalHighRisk = pmSummaries.reduce((sum, pm) => sum + pm.highRiskCount, 0);
   const interventionCount = pmSummaries.filter(pm => pm.interventionRequired).length;
   const totalWithoutNotes = pmSummaries.reduce((sum, pm) => sum + pm.propertiesWithoutNotes, 0);
+
+  const accessors = useMemo(() => ({
+    pm: (r: PMPropertySummary) => r.pmName,
+    count: (r: PMPropertySummary) => r.totalProperties,
+    score: (r: PMPropertySummary) => r.avgScore,
+    highRisk: (r: PMPropertySummary) => r.highRiskCount,
+    lateRent: (r: PMPropertySummary) => r.lateRentCount,
+    renewal: (r: PMPropertySummary) => r.renewalDueCount,
+    pendingNotes: (r: PMPropertySummary) => r.propertiesWithoutNotes,
+    status: (r: PMPropertySummary) => (r.interventionRequired ? 1 : 0),
+  }), []);
+  const { sortedItems, sortConfig, requestSort } = useSortableData<PMPropertySummary, TLSortKey>(
+    pmSummaries, accessors, { key: 'highRisk', direction: 'desc' },
+  );
 
   return (
     <div className="space-y-6">
@@ -85,18 +104,18 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>PM Name</TableHead>
-                <TableHead className="text-center">Properties</TableHead>
-                <TableHead>Avg Score</TableHead>
-                <TableHead className="text-center">🔴 High Risk</TableHead>
-                <TableHead className="text-center">Late Rent</TableHead>
-                <TableHead className="text-center">Renewal Due</TableHead>
-                <TableHead className="text-center">Notes Updated</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead><SortableHeader label="PM Name" sortKey="pm" sortConfig={sortConfig} onSort={requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Properties" sortKey="count" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead><SortableHeader label="Avg Score" sortKey="score" sortConfig={sortConfig} onSort={requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="🔴 High Risk" sortKey="highRisk" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Late Rent" sortKey="lateRent" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Renewal Due" sortKey="renewal" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Pending Notes" sortKey="pendingNotes" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pmSummaries.map(pm => (
+              {sortedItems.map(pm => (
                 <TableRow key={pm.pmId}>
                   <TableCell>
                     <div>

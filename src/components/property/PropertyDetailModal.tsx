@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Property, PropertyNote } from '@/types/property';
+import { PropertyNotesTimeline } from './PropertyNotesTimeline';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -182,24 +183,10 @@ export function PropertyDetailModal({ property, open, onClose }: PropertyDetailM
                 </div>
               </div>
             )}
-            {property.notes.length > 0 ? (
-              property.notes.map(note => (
-                <div key={note.id} className="flex items-start gap-3 p-2 rounded bg-muted/30 text-sm">
-                  <Badge variant="outline" className={cn("text-[10px] shrink-0 mt-0.5", noteTypeColors[note.type])}>
-                    {note.type}
-                  </Badge>
-                  <div className="flex-1">
-                    <p>{note.text}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {note.createdBy} • {note.createdAt}
-                    </p>
-                  </div>
-                </div>
-              ))
+            {property.notes.length > 0 || showAddNote ? (
+              <PropertyNotesTimeline notes={property.notes} />
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No notes yet. Add a note to track updates for this property.
-              </p>
+              <PropertyNotesTimeline notes={[]} />
             )}
           </CardContent>
         </Card>
