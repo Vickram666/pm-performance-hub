@@ -24,6 +24,20 @@ export function PropertyLeadershipDashboard({ cityStats, totalProperties, overal
   const totalNotesNotUpdated = cityStats.reduce((s, c) => s + c.notesNotUpdated, 0);
   const totalLateRent = cityStats.reduce((s, c) => s + c.lateRentCount, 0);
 
+  const accessors = useMemo(() => ({
+    city: (r: CityPropertyStats) => r.city,
+    count: (r: CityPropertyStats) => r.totalProperties,
+    score: (r: CityPropertyStats) => r.avgScore,
+    highRisk: (r: CityPropertyStats) => r.highRiskCount,
+    lateRent: (r: CityPropertyStats) => r.lateRentCount,
+    renewal: (r: CityPropertyStats) => r.renewalDueCount,
+    pendingNotes: (r: CityPropertyStats) => r.notesNotUpdated,
+    status: (r: CityPropertyStats) => r.avgScore,
+  }), []);
+  const { sortedItems, sortConfig, requestSort } = useSortableData<CityPropertyStats, CitySortKey>(
+    cityStats, accessors, { key: 'score', direction: 'asc' },
+  );
+
   return (
     <div className="space-y-6">
       {/* Key Metrics */}
