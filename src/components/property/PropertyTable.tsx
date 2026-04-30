@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { AlertCircle, CheckCircle, Clock, AlertTriangle, Home, Zap, StickyNote } from 'lucide-react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -8,6 +9,10 @@ import { Progress } from '@/components/ui/progress';
 import { Property } from '@/types/property';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type PropertySortKey = 'id' | 'name' | 'score' | 'rent' | 'renewal' | 'risk' | 'notes' | 'issues';
 
 interface PropertyTableProps {
   properties: Property[];
@@ -15,6 +20,22 @@ interface PropertyTableProps {
 }
 
 export function PropertyTable({ properties, onPropertyClick }: PropertyTableProps) {
+  const accessors = useMemo(() => ({
+    id: (p: Property) => p.basic.propertyId,
+    name: (p: Property) => p.basic.propertyName,
+    score: (p: Property) => p.healthScore,
+    rent: (p: Property) => p.financial.onTimeRent ? 0 : p.financial.lateDays,
+    renewal: (p: Property) => p.retention.renewalCompleted ? 9999 : p.retention.daysToLeaseEnd,
+    risk: (p: Property) => ({ low: 0, medium: 1, high: 2 }[p.riskLevel]),
+    notes: (p: Property) => p.notes.length,
+    issues: (p: Property) => p.issues.length,
+  }), []);
+
+  const { sortedItems, sortConfig, requestSort } = useSortableData<Property, PropertySortKey>(
+    properties,
+    accessors,
+    { key: 'score', direction: 'asc' }, // default: lowest score first (worst)
+  );
   const getRiskBadge = (riskLevel: Property['riskLevel']) => {
     switch (riskLevel) {
       case 'low':
