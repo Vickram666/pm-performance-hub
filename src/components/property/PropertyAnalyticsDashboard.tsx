@@ -11,6 +11,11 @@ import {
   TrendingUp, Home, Target, StickyNote, BarChart3, PieChart as PieChartIcon
 } from 'lucide-react';
 import type { PropertyAnalyticsStats } from '@/types/property';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type PillarRow = PropertyAnalyticsStats['pillarAverages'][number];
+type PillarSortKey = 'pillar' | 'max' | 'avg' | 'pct';
 
 interface PropertyAnalyticsDashboardProps {
   stats: PropertyAnalyticsStats;
