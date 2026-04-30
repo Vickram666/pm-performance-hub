@@ -148,19 +148,35 @@ export function PropertyTable({ properties, onPropertyClick }: PropertyTableProp
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>Property Name</TableHead>
-            <TableHead className="text-center">Health Score</TableHead>
-            <TableHead className="text-center">Rent Status</TableHead>
-            <TableHead className="text-center">Renewal</TableHead>
-            <TableHead className="text-center">Risk</TableHead>
+            <TableHead className="w-[100px]">
+              <SortableHeader label="ID" sortKey="id" sortConfig={sortConfig} onSort={requestSort} />
+            </TableHead>
+            <TableHead>
+              <SortableHeader label="Property Name" sortKey="name" sortConfig={sortConfig} onSort={requestSort} />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Health Score" sortKey="score" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Rent Status" sortKey="rent" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Renewal" sortKey="renewal" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Risk" sortKey="risk" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
             <TableHead className="text-center">Quick Actions</TableHead>
-            <TableHead className="text-center">Notes</TableHead>
-            <TableHead className="text-right">Issues</TableHead>
+            <TableHead className="text-center">
+              <SortableHeader label="Notes" sortKey="notes" sortConfig={sortConfig} onSort={requestSort} align="center" />
+            </TableHead>
+            <TableHead className="text-right">
+              <SortableHeader label="Issues" sortKey="issues" sortConfig={sortConfig} onSort={requestSort} align="right" />
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {properties.map((property) => {
+          {sortedItems.map((property) => {
             const quickActions = getQuickActions(property);
             return (
               <TableRow 
