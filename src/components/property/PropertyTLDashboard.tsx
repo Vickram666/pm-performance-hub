@@ -104,18 +104,18 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>PM Name</TableHead>
-                <TableHead className="text-center">Properties</TableHead>
-                <TableHead>Avg Score</TableHead>
-                <TableHead className="text-center">🔴 High Risk</TableHead>
-                <TableHead className="text-center">Late Rent</TableHead>
-                <TableHead className="text-center">Renewal Due</TableHead>
-                <TableHead className="text-center">Notes Updated</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead><SortableHeader label="PM Name" sortKey="pm" sortConfig={sortConfig} onSort={requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Properties" sortKey="count" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead><SortableHeader label="Avg Score" sortKey="score" sortConfig={sortConfig} onSort={requestSort} /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="🔴 High Risk" sortKey="highRisk" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Late Rent" sortKey="lateRent" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Renewal Due" sortKey="renewal" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Pending Notes" sortKey="pendingNotes" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
+                <TableHead className="text-center"><SortableHeader label="Status" sortKey="status" sortConfig={sortConfig} onSort={requestSort} align="center" /></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pmSummaries.map(pm => (
+              {sortedItems.map(pm => (
                 <TableRow key={pm.pmId}>
                   <TableCell>
                     <div>
