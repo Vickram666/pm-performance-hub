@@ -1,11 +1,10 @@
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RotateCcw, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+  Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -19,147 +18,116 @@ interface PropertyFiltersProps {
 }
 
 export function PropertyFilters({ filters, onFiltersChange, activeFilterCount }: PropertyFiltersProps) {
-  const handleSearchChange = (value: string) => {
-    onFiltersChange({
-      ...filters,
-      searchQuery: value,
-    });
-  };
+  const update = (patch: Partial<FiltersType>) => onFiltersChange({ ...filters, ...patch });
 
-  const handleScoreRangeChange = (value: number[]) => {
-    onFiltersChange({
-      ...filters,
-      scoreRange: [value[0], value[1]],
-    });
-  };
+  const clearAll = () => onFiltersChange({
+    scoreRange: [0, 100],
+    lateRentOnly: false,
+    renewalDueDays: null,
+    lowOwnerRating: false,
+    searchQuery: '',
+  });
 
-  const handleLateRentChange = (checked: boolean) => {
-    onFiltersChange({
-      ...filters,
-      lateRentOnly: checked,
-    });
-  };
-
-  const handleRenewalDueChange = (days: number | null) => {
-    onFiltersChange({
-      ...filters,
-      renewalDueDays: filters.renewalDueDays === days ? null : days,
-    });
-  };
-
-  const handleLowOwnerRatingChange = (checked: boolean) => {
-    onFiltersChange({
-      ...filters,
-      lowOwnerRating: checked,
-    });
-  };
-
-  const clearFilters = () => {
-    onFiltersChange({
-      scoreRange: [0, 100],
-      lateRentOnly: false,
-      renewalDueDays: null,
-      lowOwnerRating: false,
-      searchQuery: '',
-    });
-  };
+  const QuickChip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+        active
+          ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+          : 'bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground'
+      }`}
+    >
+      {children}
+      {active && <X className="h-3 w-3" />}
+    </button>
+  );
 
   return (
-    <div className="flex flex-wrap gap-3 p-4 bg-card rounded-lg border">
-      {/* Search */}
-      <div className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search property ID or name..."
-          value={filters.searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {/* Quick Filters */}
-      <div className="flex flex-wrap gap-2">
-        <Badge 
-          variant={filters.lateRentOnly ? "default" : "outline"}
-          className="cursor-pointer hover:bg-primary/80 transition-colors"
-          onClick={() => handleLateRentChange(!filters.lateRentOnly)}
-        >
-          Late Rent
-        </Badge>
-        <Badge 
-          variant={filters.renewalDueDays === 30 ? "default" : "outline"}
-          className="cursor-pointer hover:bg-primary/80 transition-colors"
-          onClick={() => handleRenewalDueChange(30)}
-        >
-          Renewal ≤30d
-        </Badge>
-        <Badge 
-          variant={filters.renewalDueDays === 60 ? "default" : "outline"}
-          className="cursor-pointer hover:bg-primary/80 transition-colors"
-          onClick={() => handleRenewalDueChange(60)}
-        >
-          Renewal ≤60d
-        </Badge>
-        <Badge 
-          variant={filters.lowOwnerRating ? "default" : "outline"}
-          className="cursor-pointer hover:bg-primary/80 transition-colors"
-          onClick={() => handleLowOwnerRatingChange(!filters.lowOwnerRating)}
-        >
-          Low Rating (&lt;4)
-        </Badge>
-      </div>
-
-      {/* Advanced Filters */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="h-4 w-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80" align="end">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Score Range: {filters.scoreRange[0]} - {filters.scoreRange[1]}</Label>
-              <Slider
-                min={0}
-                max={100}
-                step={5}
-                value={filters.scoreRange}
-                onValueChange={handleScoreRangeChange}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="lateRent" 
-                  checked={filters.lateRentOnly}
-                  onCheckedChange={(checked) => handleLateRentChange(!!checked)}
-                />
-                <Label htmlFor="lateRent">Late Rent Only</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="lowRating" 
-                  checked={filters.lowOwnerRating}
-                  onCheckedChange={(checked) => handleLowOwnerRatingChange(!!checked)}
-                />
-                <Label htmlFor="lowRating">Low Owner Rating (&lt;4)</Label>
-              </div>
-            </div>
-
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full">
-              Clear All Filters
-            </Button>
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        {/* Top row: search + filters */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search property ID or name..."
+              value={filters.searchQuery}
+              onChange={(e) => update({ searchQuery: e.target.value })}
+              className="pl-9"
+            />
           </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 h-10">
+                <Filter className="h-4 w-4" />
+                Advanced
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Score Range: {filters.scoreRange[0]} – {filters.scoreRange[1]}
+                  </Label>
+                  <Slider
+                    min={0} max={100} step={5}
+                    value={filters.scoreRange}
+                    onValueChange={(v) => update({ scoreRange: [v[0], v[1]] })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="lateRent" checked={filters.lateRentOnly}
+                      onCheckedChange={(c) => update({ lateRentOnly: !!c })} />
+                    <Label htmlFor="lateRent" className="text-sm">Late Rent Only</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="lowRating" checked={filters.lowOwnerRating}
+                      onCheckedChange={(c) => update({ lowOwnerRating: !!c })} />
+                    <Label htmlFor="lowRating" className="text-sm">Low Owner Rating (&lt;4)</Label>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={clearAll} className="w-full">
+                  Clear all filters
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearAll} className="gap-1 h-10">
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset
+            </Button>
+          )}
+        </div>
+
+        {/* Quick chips */}
+        <div className="flex flex-wrap gap-2 pt-1">
+          <span className="text-xs text-muted-foreground self-center mr-1">Quick filters:</span>
+          <QuickChip active={filters.lateRentOnly} onClick={() => update({ lateRentOnly: !filters.lateRentOnly })}>
+            Late Rent
+          </QuickChip>
+          <QuickChip active={filters.renewalDueDays === 30}
+            onClick={() => update({ renewalDueDays: filters.renewalDueDays === 30 ? null : 30 })}>
+            Renewal ≤ 30d
+          </QuickChip>
+          <QuickChip active={filters.renewalDueDays === 60}
+            onClick={() => update({ renewalDueDays: filters.renewalDueDays === 60 ? null : 60 })}>
+            Renewal ≤ 60d
+          </QuickChip>
+          <QuickChip active={filters.lowOwnerRating}
+            onClick={() => update({ lowOwnerRating: !filters.lowOwnerRating })}>
+            Low Owner Rating
+          </QuickChip>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
