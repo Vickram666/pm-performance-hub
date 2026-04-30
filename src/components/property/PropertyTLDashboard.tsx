@@ -62,12 +62,12 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-amber-500/20">
-                <StickyNote className="h-6 w-6 text-amber-500" />
+              <div className="p-3 rounded-lg bg-warning/10">
+                <StickyNote className="h-6 w-6 text-warning" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">No Notes Updated</p>
-                <p className="text-2xl font-bold text-amber-500">{totalWithoutNotes}</p>
+                <p className="text-2xl font-bold text-warning">{totalWithoutNotes}</p>
               </div>
             </div>
           </CardContent>
@@ -118,7 +118,7 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
                   </TableCell>
                   <TableCell className="text-center">
                     {pm.highRiskCount > 3 ? (
-                      <Badge variant="outline" className="bg-destructive/20 text-destructive border-destructive/30">
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                         {pm.highRiskCount}
                       </Badge>
                     ) : (
@@ -133,7 +133,7 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
                       <span className="text-muted-foreground">/</span>
                       <span>{pm.totalProperties}</span>
                       {pm.propertiesWithoutNotes > 3 && (
-                        <Badge variant="outline" className="ml-1 bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
+                        <Badge variant="outline" className="ml-1 bg-warning/10 text-warning border-warning/20 text-[10px]">
                           {pm.propertiesWithoutNotes} missing
                         </Badge>
                       )}
@@ -141,12 +141,12 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
                   </TableCell>
                   <TableCell className="text-center">
                     {pm.interventionRequired ? (
-                      <Badge variant="outline" className="bg-destructive/20 text-destructive border-destructive/30">
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         Needs Review
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-success/20 text-success border-success/30">
+                      <Badge variant="outline" className="bg-success/10 text-success border-success/20">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         On Track
                       </Badge>

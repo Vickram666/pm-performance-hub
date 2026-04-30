@@ -40,8 +40,8 @@ export function LeadershipDashboard({ stats }: LeadershipDashboardProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-blue-500/20">
-                <Building className="h-6 w-6 text-blue-400" />
+              <div className="p-3 rounded-lg bg-primary/10">
+                <Building className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active Renewals</p>
@@ -54,12 +54,12 @@ export function LeadershipDashboard({ stats }: LeadershipDashboardProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-emerald-500/20">
-                <CheckCircle className="h-6 w-6 text-emerald-400" />
+              <div className="p-3 rounded-lg bg-success/10">
+                <CheckCircle className="h-6 w-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-emerald-400">{stats.totalCompleted}</p>
+                <p className="text-2xl font-bold text-success">{stats.totalCompleted}</p>
               </div>
             </div>
           </CardContent>
@@ -68,12 +68,12 @@ export function LeadershipDashboard({ stats }: LeadershipDashboardProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-red-500/20">
-                <XCircle className="h-6 w-6 text-red-400" />
+              <div className="p-3 rounded-lg bg-destructive/10">
+                <XCircle className="h-6 w-6 text-destructive" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Churn (Failed)</p>
-                <p className="text-2xl font-bold text-red-400">{stats.totalFailed}</p>
+                <p className="text-2xl font-bold text-destructive">{stats.totalFailed}</p>
                 <p className="text-xs text-muted-foreground">{stats.churnRate}% churn rate</p>
               </div>
             </div>
@@ -150,11 +150,11 @@ export function LeadershipDashboard({ stats }: LeadershipDashboardProps) {
                 <TableRow key={city.city}>
                   <TableCell className="font-medium">{city.city}</TableCell>
                   <TableCell className="text-center">{city.totalRenewals}</TableCell>
-                  <TableCell className="text-center text-emerald-400">{city.completedCount}</TableCell>
-                  <TableCell className="text-center text-red-400">{city.failedCount}</TableCell>
+                  <TableCell className="text-center text-success">{city.completedCount}</TableCell>
+                  <TableCell className="text-center text-destructive">{city.failedCount}</TableCell>
                   <TableCell className="text-center">
                     {city.redCases > 5 ? (
-                      <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                         {city.redCases}
                       </Badge>
                     ) : (
@@ -163,13 +163,10 @@ export function LeadershipDashboard({ stats }: LeadershipDashboardProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 min-w-[120px]">
-                      <Progress 
-                        value={city.renewalRate} 
-                        className="h-2"
-                      />
+                      <Progress value={city.renewalRate} className="h-2" />
                       <span className={`text-sm font-medium ${
-                        city.renewalRate >= 85 ? 'text-emerald-400' :
-                        city.renewalRate >= 70 ? 'text-amber-400' : 'text-red-400'
+                        city.renewalRate >= 85 ? 'text-success' :
+                        city.renewalRate >= 70 ? 'text-warning' : 'text-destructive'
                       }`}>
                         {city.renewalRate}%
                       </span>
@@ -177,17 +174,17 @@ export function LeadershipDashboard({ stats }: LeadershipDashboardProps) {
                   </TableCell>
                   <TableCell className="text-center">
                     {city.renewalRate >= 85 ? (
-                      <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      <Badge variant="outline" className="bg-success/10 text-success border-success/20">
                         <TrendingUp className="h-3 w-3 mr-1" />
                         Excellent
                       </Badge>
                     ) : city.renewalRate >= 70 ? (
-                      <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                      <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         Needs Attention
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                         <TrendingDown className="h-3 w-3 mr-1" />
                         Critical
                       </Badge>
