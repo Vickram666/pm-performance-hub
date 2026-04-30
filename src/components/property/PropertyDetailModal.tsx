@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Property, PropertyNote } from '@/types/property';
+import { PropertyNotesTimeline } from './PropertyNotesTimeline';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
