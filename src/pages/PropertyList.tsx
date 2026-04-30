@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Home, User, Calendar, Users, BarChart3, PieChart } from 'lucide-react';
 import { PropertyFilters } from '@/components/property/PropertyFilters';
@@ -15,6 +15,36 @@ import { Property, PropertyFilters as FiltersType } from '@/types/property';
 import { mockPMData } from '@/data/mockData';
 
 type ViewMode = 'pm' | 'tl' | 'leadership' | 'analytics';
+
+const FILTER_STORAGE_KEY = 'azuro:property-filters';
+const VIEW_STORAGE_KEY = 'azuro:property-view';
+
+const DEFAULT_FILTERS: FiltersType = {
+  scoreRange: [0, 100],
+  lateRentOnly: false,
+  renewalDueDays: null,
+  lowOwnerRating: false,
+  searchQuery: '',
+};
+
+function loadFilters(): FiltersType {
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_FILTERS, ...parsed };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
+}
+
+function loadView(): ViewMode {
+  try {
+    const v = sessionStorage.getItem(VIEW_STORAGE_KEY) as ViewMode | null;
+    if (v && ['pm', 'tl', 'leadership', 'analytics'].includes(v)) return v;
+  } catch {}
+  return 'pm';
+}
 
 export default function PropertyList() {
   const [searchParams] = useSearchParams();
