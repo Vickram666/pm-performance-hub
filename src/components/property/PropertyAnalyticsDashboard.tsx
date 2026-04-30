@@ -27,6 +27,16 @@ const COLORS = [
 ];
 
 export function PropertyAnalyticsDashboard({ stats }: PropertyAnalyticsDashboardProps) {
+  const pillarAccessors = useMemo(() => ({
+    pillar: (r: PillarRow) => r.pillar,
+    max: (r: PillarRow) => r.max,
+    avg: (r: PillarRow) => r.avg,
+    pct: (r: PillarRow) => r.max > 0 ? r.avg / r.max : 0,
+  }), []);
+  const pillarSort = useSortableData<PillarRow, PillarSortKey>(
+    stats.pillarAverages, pillarAccessors, { key: 'pct', direction: 'asc' },
+  );
+
   return (
     <div className="space-y-6">
       {/* KPIs */}
