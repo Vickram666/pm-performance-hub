@@ -1,9 +1,14 @@
+import { useMemo } from 'react';
 import { PMPropertySummary } from '@/types/property';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, AlertTriangle, CheckCircle, TrendingUp, StickyNote } from 'lucide-react';
+import { useSortableData } from '@/hooks/useSortableData';
+import { SortableHeader } from '@/components/ui/sortable-header';
+
+type TLSortKey = 'pm' | 'count' | 'score' | 'highRisk' | 'lateRent' | 'renewal' | 'pendingNotes' | 'status';
 
 interface PropertyTLDashboardProps {
   pmSummaries: PMPropertySummary[];
@@ -13,6 +18,20 @@ export function PropertyTLDashboard({ pmSummaries }: PropertyTLDashboardProps) {
   const totalHighRisk = pmSummaries.reduce((sum, pm) => sum + pm.highRiskCount, 0);
   const interventionCount = pmSummaries.filter(pm => pm.interventionRequired).length;
   const totalWithoutNotes = pmSummaries.reduce((sum, pm) => sum + pm.propertiesWithoutNotes, 0);
+
+  const accessors = useMemo(() => ({
+    pm: (r: PMPropertySummary) => r.pmName,
+    count: (r: PMPropertySummary) => r.totalProperties,
+    score: (r: PMPropertySummary) => r.avgScore,
+    highRisk: (r: PMPropertySummary) => r.highRiskCount,
+    lateRent: (r: PMPropertySummary) => r.lateRentCount,
+    renewal: (r: PMPropertySummary) => r.renewalDueCount,
+    pendingNotes: (r: PMPropertySummary) => r.propertiesWithoutNotes,
+    status: (r: PMPropertySummary) => (r.interventionRequired ? 1 : 0),
+  }), []);
+  const { sortedItems, sortConfig, requestSort } = useSortableData<PMPropertySummary, TLSortKey>(
+    pmSummaries, accessors, { key: 'highRisk', direction: 'desc' },
+  );
 
   return (
     <div className="space-y-6">
