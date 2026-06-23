@@ -76,6 +76,16 @@ export default {
           customer: "hsl(var(--pillar-customer))",
           ecosystem: "hsl(var(--pillar-ecosystem))",
         },
+        urgency: {
+          critical: "hsl(var(--urgency-critical))",
+          "critical-soft": "hsl(var(--urgency-critical-soft))",
+          high: "hsl(var(--urgency-high))",
+          "high-soft": "hsl(var(--urgency-high-soft))",
+          medium: "hsl(var(--urgency-medium))",
+          "medium-soft": "hsl(var(--urgency-medium-soft))",
+          low: "hsl(var(--urgency-low))",
+          "low-soft": "hsl(var(--urgency-low-soft))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
