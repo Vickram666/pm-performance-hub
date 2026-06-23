@@ -1,0 +1,153 @@
+import { useMemo, useState } from 'react';
+import { Users, AlertTriangle, RefreshCw, Home, Timer, TrendingDown, ShieldAlert } from 'lucide-react';
+import { PageTransition } from '@/components/layout/PageTransition';
+import { KpiPill, KpiBar } from '@/components/acc/primitives/KpiPill';
+import { OperationalCard, SectionHeader } from '@/components/acc/primitives/OperationalCard';
+import { AgingBadge, UrgencyDot } from '@/components/acc/primitives/AgingBadge';
+import { PipelineFunnel } from '@/components/acc/primitives/PipelineFunnel';
+import { ACC_CITIES, getCityHealth, getEscalations, getOperationalSummary, getPipelineCounts, getPMMatrix } from '@/data/accAggregators';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+
+export default function TLWarRoom() {
+  const [city, setCity] = useState<string>(ACC_CITIES[0]);
+  const summary = useMemo(() => getOperationalSummary({ city }), [city]);
+  const matrix = useMemo(() => getPMMatrix(city), [city]);
+  const escalations = useMemo(() => getEscalations({ city }), [city]);
+  const pipeline = useMemo(() => getPipelineCounts({ city }), [city]);
+  const cityHealth = useMemo(() => getCityHealth().find(c => c.city === city), [city]);
+
+  return (
+    <PageTransition>
+      <div className="min-h-screen bg-background pb-16">
+        <header className="border-b bg-card">
+          <div className="container py-4 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Team Lead</p>
+              <h1 className="text-xl font-semibold tracking-tight">{city} War Room</h1>
+              <p className="text-xs text-muted-foreground">Where is my city operation failing today?</p>
+            </div>
+            <Select value={city} onValueChange={setCity}>
+              <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ACC_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </header>
+
+        <KpiBar>
+          <KpiPill label="Active portfolio" value={cityHealth?.portfolio ?? 0} icon={<Home className="h-4 w-4" />} />
+          <KpiPill label="Escalations" value={summary.escalations} tone={summary.escalations > 5 ? 'critical' : 'neutral'} icon={<AlertTriangle className="h-4 w-4" />} />
+          <KpiPill label="SLA %" value={`${cityHealth?.slaPercent ?? 0}%`} tone={(cityHealth?.slaPercent ?? 0) < 80 ? 'high' : 'success'} icon={<Timer className="h-4 w-4" />} />
+          <KpiPill label="Renewals pending" value={summary.renewalsPending} tone="info" icon={<RefreshCw className="h-4 w-4" />} />
+          <KpiPill label="Vacancy %" value={cityHealth ? `${Math.round((cityHealth.vacantCount / Math.max(cityHealth.portfolio, 1)) * 100)}%` : '0%'} tone="medium" />
+          <KpiPill label="Churn" value={`${cityHealth?.churn ?? 0}%`} tone={(cityHealth?.churn ?? 0) > 10 ? 'critical' : 'neutral'} icon={<TrendingDown className="h-4 w-4" />} />
+          <KpiPill label="PMs" value={cityHealth?.pmCount ?? 0} icon={<Users className="h-4 w-4" />} />
+        </KpiBar>
+
+        <main className="container py-6 space-y-8">
+          <section>
+            <SectionHeader title="PM performance matrix" subtitle="Workload, throughput, and risk per PM" count={matrix.length} />
+            <OperationalCard className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-muted/40">
+                  <tr>
+                    <th className="text-left p-3">PM</th>
+                    <th className="text-right p-3">Portfolio</th>
+                    <th className="text-right p-3">Tasks</th>
+                    <th className="text-right p-3">Escalations</th>
+                    <th className="text-right p-3">SLA</th>
+                    <th className="text-right p-3">Renewals</th>
+                    <th className="text-right p-3">Churn risk</th>
+                    <th className="text-right p-3">CSAT</th>
+                    <th className="text-right p-3">Overdue</th>
+                    <th className="text-right p-3 pr-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {matrix.map(row => (
+                    <tr key={row.pmId} className="border-t hover:bg-muted/30">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <UrgencyDot urgency={row.performance === 'underperforming' ? 'critical' : row.performance === 'top' ? 'low' : 'medium'} />
+                          <span className="font-medium">{row.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-right tabular-nums">
+                        <span className={cn(row.load === 'overloaded' && 'text-urgency-high font-medium')}>{row.portfolio}</span>
+                      </td>
+                      <td className="p-3 text-right tabular-nums">{row.pendingTasks}</td>
+                      <td className={cn('p-3 text-right tabular-nums', row.escalations >= 3 && 'text-urgency-critical font-medium')}>{row.escalations}</td>
+                      <td className={cn('p-3 text-right tabular-nums', row.slaPercent < 75 && 'text-urgency-high font-medium')}>{row.slaPercent}%</td>
+                      <td className="p-3 text-right tabular-nums">{row.renewalsPending}</td>
+                      <td className={cn('p-3 text-right tabular-nums', row.churnRisk >= 2 && 'text-urgency-critical font-medium')}>{row.churnRisk}</td>
+                      <td className="p-3 text-right tabular-nums">{row.csat.toFixed(1)}</td>
+                      <td className={cn('p-3 text-right tabular-nums', row.overdueActions > 0 && 'text-urgency-high font-medium')}>{row.overdueActions}</td>
+                      <td className="p-3 text-right pr-4">
+                        <span className={cn(
+                          'inline-block text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded',
+                          row.performance === 'top' && 'bg-success/15 text-success',
+                          row.performance === 'mid' && 'bg-muted text-muted-foreground',
+                          row.performance === 'underperforming' && 'bg-urgency-critical-soft text-urgency-critical',
+                        )}>{row.performance}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </OperationalCard>
+          </section>
+
+          <section>
+            <SectionHeader title="Escalation command center" subtitle="Aging-sorted, by severity" count={escalations.length} />
+            <div className="grid md:grid-cols-2 gap-2">
+              {escalations.slice(0, 10).map(e => (
+                <OperationalCard key={e.id} urgency={e.severity} className="p-3">
+                  <div className="pl-2 flex items-start gap-3">
+                    <ShieldAlert className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-sm truncate">{e.property}</p>
+                        <AgingBadge days={e.agingDays} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">{e.city} · {e.owner}</p>
+                      <p className="text-xs mt-1">{e.reason} · <span className="text-muted-foreground">{e.rootCause}</span></p>
+                    </div>
+                  </div>
+                </OperationalCard>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <SectionHeader title="Re-renting control tower" subtitle="Vacant inventory and broker efficiency" />
+            <PipelineFunnel
+              stages={[
+                { key: 'mo', label: 'Move-out', count: pipeline.reRenting.moveOut, tone: 'open' },
+                { key: 'vac', label: 'Vacant', count: pipeline.reRenting.vacant, tone: 'active' },
+                { key: 'brk', label: 'Broker assigned', count: pipeline.reRenting.brokerAssigned, tone: 'active' },
+                { key: 'self', label: 'Owner self-rent', count: pipeline.reRenting.ownerSelfRent, tone: 'risk' },
+                { key: 'lost', label: 'Lost inventory', count: pipeline.reRenting.lost, tone: 'risk' },
+              ]}
+            />
+          </section>
+
+          <section>
+            <SectionHeader title="Renewal conversion funnel" subtitle="City pipeline at a glance" />
+            <PipelineFunnel
+              stages={[
+                { key: 'open', label: 'Open', count: pipeline.renewal.upcoming, tone: 'open' },
+                { key: 'neg', label: 'Negotiation', count: pipeline.renewal.negotiation, tone: 'active' },
+                { key: 'al', label: 'Aligned', count: pipeline.renewal.ownerAligned + pipeline.renewal.tenantAligned, tone: 'aligned' },
+                { key: 'st', label: 'Stuck', count: pipeline.renewal.highRisk, tone: 'risk' },
+                { key: 'ch', label: 'Churn risk', count: pipeline.renewal.churnRisk, tone: 'risk' },
+                { key: 'cl', label: 'Closed', count: pipeline.renewal.closed, tone: 'closed' },
+              ]}
+            />
+          </section>
+        </main>
+      </div>
+    </PageTransition>
+  );
+}
