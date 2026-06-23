@@ -102,7 +102,7 @@ function filterRenewals(scope?: { city?: string; pm?: string }): RenewalRecord[]
   if (!scope) return allRenewals;
   return allRenewals.filter(r =>
     (!scope.city || r.property.city === scope.city)
-    && (!scope.pm || r.pm.name === scope.pm)
+    && (!scope.pm || r.property.assignedPM === scope.pm)
   );
 }
 
@@ -123,7 +123,7 @@ export function getCriticalActions(scope?: { city?: string; pm?: string }): Crit
       title: `Renewal at risk — ${r.property.propertyName}`,
       subtitle: `${r.property.city} • ${r.lease.daysToExpiry}d to expiry`,
       nextStep: 'Reach out to owner immediately and document response',
-      contact: r.property.ownerName ?? 'Owner',
+      contact: 'Owner',
       agingDays: Math.max(0, 90 - r.lease.daysToExpiry),
       hoursLeft: Math.max(-48, r.lease.daysToExpiry * 24),
       link: '/renewals',
