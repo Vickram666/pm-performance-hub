@@ -249,6 +249,7 @@ export function getEscalations(scope?: { city?: string; pm?: string }): Escalati
       if (reasons.length === 0) reasons.push('high risk');
       return {
         id: `esc-${p.basic.propertyId}`,
+        propertyId: p.basic.propertyId,
         property: p.basic.propertyName,
         city: p.basic.city,
         owner: p.basic.ownerName,
