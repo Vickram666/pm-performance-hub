@@ -7,10 +7,29 @@ import { allPMs, cityStats as leaderCityStats } from '@/data/leaderboardData';
 import { Property } from '@/types/property';
 import { RenewalRecord } from '@/types/renewal';
 
+export type AccPeriod = 'today' | 'week' | 'month' | 'quarter';
+
+export const PERIOD_LABEL: Record<AccPeriod, string> = {
+  today: 'Today',
+  week: 'This week',
+  month: 'This month',
+  quarter: 'This quarter',
+};
+
+const PERIOD_DAYS: Record<AccPeriod, number> = {
+  today: 1,
+  week: 7,
+  month: 30,
+  quarter: 90,
+};
+
 export interface CriticalAction {
   id: string;
   urgency: 'critical' | 'high' | 'medium';
   category: 'renewal' | 'rent' | 'sr' | 'inspection' | 'followup' | 'churn';
+  /** expected = routine PM job (inspections, move-in/out, follow-ups);
+   *  flagged = system-detected exception (late rent, red renewal, SLA breach) */
+  kind: 'expected' | 'flagged';
   title: string;
   subtitle: string;
   nextStep: string;
@@ -18,10 +37,12 @@ export interface CriticalAction {
   agingDays: number;
   hoursLeft: number;
   link: string;
+  propertyId?: string;
 }
 
 export interface Escalation {
   id: string;
+  propertyId?: string;
   property: string;
   city: string;
   owner: string;
@@ -33,6 +54,7 @@ export interface Escalation {
 
 export interface FollowUp {
   id: string;
+  propertyId?: string;
   with: string;
   topic: string;
   due: string;
