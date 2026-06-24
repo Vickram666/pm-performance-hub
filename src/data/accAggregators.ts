@@ -305,6 +305,7 @@ export function getFollowUps(scope?: { city?: string; pm?: string }): FollowUp[]
     .slice(0, 12)
     .map((p, i) => ({
       id: `fu-${p.basic.propertyId}`,
+      propertyId: p.basic.propertyId,
       with: p.basic.ownerName,
       topic: !p.financial.onTimeRent
         ? `Rent confirmation — ${p.basic.propertyName}`
