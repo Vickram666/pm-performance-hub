@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { ListChecks, AlertTriangle, RefreshCw, Home, Timer, MessageCircle, ShieldAlert } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ListChecks, AlertTriangle, RefreshCw, Home, Timer, MessageCircle, ShieldAlert, ArrowRight, Briefcase, Flag } from 'lucide-react';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { KpiPill, KpiBar } from '@/components/acc/primitives/KpiPill';
 import { OperationalCard, SectionHeader } from '@/components/acc/primitives/OperationalCard';
@@ -9,33 +9,81 @@ import { PipelineFunnel } from '@/components/acc/primitives/PipelineFunnel';
 import {
   getCriticalActions, getEscalations, getFollowUps,
   getOperationalSummary, getPipelineCounts,
+  PERIOD_LABEL, AccPeriod,
 } from '@/data/accAggregators';
+import { allProperties } from '@/data/propertyData';
 import { mockPMData } from '@/data/mockData';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { Property } from '@/types/property';
+import { PropertyDetailModal } from '@/components/property/PropertyDetailModal';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+
+const PERIODS: AccPeriod[] = ['today', 'week', 'month', 'quarter'];
 
 export default function PMCommand() {
+  const [period, setPeriod] = useState<AccPeriod>('today');
+  const [kindFilter, setKindFilter] = useState<'all' | 'expected' | 'flagged'>('all');
+  const [openProperty, setOpenProperty] = useState<Property | null>(null);
+
   const summary = useMemo(() => getOperationalSummary(), []);
-  const actions = useMemo(() => getCriticalActions(), []);
+  const allActions = useMemo(() => getCriticalActions(undefined, period), [period]);
+  const actions = useMemo(
+    () => kindFilter === 'all' ? allActions : allActions.filter(a => a.kind === kindFilter),
+    [allActions, kindFilter],
+  );
+  const expectedCount = allActions.filter(a => a.kind === 'expected').length;
+  const flaggedCount = allActions.filter(a => a.kind === 'flagged').length;
+
   const escalations = useMemo(() => getEscalations(), []);
   const pipeline = useMemo(() => getPipelineCounts(), []);
   const followUps = useMemo(() => getFollowUps(), []);
+
+  const propertyById = useMemo(() => {
+    const map = new Map<string, Property>();
+    allProperties.forEach(p => map.set(p.basic.propertyId, p));
+    return map;
+  }, []);
+
+  const openByPropertyId = (id?: string) => {
+    if (!id) return;
+    const prop = propertyById.get(id);
+    if (prop) setOpenProperty(prop);
+  };
 
   return (
     <PageTransition>
       <div className="min-h-screen bg-background pb-16">
         <header className="border-b bg-card">
-          <div className="container py-4 flex items-center justify-between flex-wrap gap-2">
+          <div className="container py-4 flex items-center justify-between flex-wrap gap-3">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Property Manager</p>
               <h1 className="text-xl font-semibold tracking-tight">
                 {mockPMData.profile.name} · Command Center
               </h1>
-              <p className="text-xs text-muted-foreground">Operational inbox — what needs you today</p>
+              <p className="text-xs text-muted-foreground">
+                Operational inbox — viewing <span className="text-foreground font-medium">{PERIOD_LABEL[period]}</span>
+              </p>
             </div>
-            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-              My Score view <ArrowRight className="h-3 w-3" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <div className="inline-flex rounded-md border border-border/70 bg-card p-0.5">
+                {PERIODS.map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={cn(
+                      'px-2.5 py-1 text-xs rounded-sm transition-colors',
+                      period === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {PERIOD_LABEL[p]}
+                  </button>
+                ))}
+              </div>
+              <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                My Score view <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -53,35 +101,74 @@ export default function PMCommand() {
           {/* Critical Actions Queue */}
           <section>
             <SectionHeader
-              title="Today's critical actions"
-              subtitle="Prioritized inbox — act in order, then close out"
+              title="Action queue"
+              subtitle="Click any row to open the property. Flagged = system-detected risk. Expected = your routine PM job."
               count={actions.length}
+              right={
+                <Tabs value={kindFilter} onValueChange={(v) => setKindFilter(v as typeof kindFilter)}>
+                  <TabsList className="h-8">
+                    <TabsTrigger value="all" className="text-xs">All ({allActions.length})</TabsTrigger>
+                    <TabsTrigger value="flagged" className="text-xs gap-1">
+                      <Flag className="h-3 w-3" /> Flagged ({flaggedCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="expected" className="text-xs gap-1">
+                      <Briefcase className="h-3 w-3" /> Expected ({expectedCount})
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              }
             />
             <div className="space-y-2">
-              {actions.slice(0, 12).map(a => (
-                <OperationalCard key={a.id} urgency={a.urgency} className="p-3">
-                  <div className="flex items-center gap-3 pl-2">
-                    <UrgencyDot urgency={a.urgency} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm truncate">{a.title}</span>
-                        <AgingBadge days={a.agingDays} />
-                        <SlaTimer hoursLeft={a.hoursLeft} />
+              {actions.slice(0, 20).map(a => {
+                const clickable = !!a.propertyId && propertyById.has(a.propertyId);
+                return (
+                  <OperationalCard
+                    key={a.id}
+                    urgency={a.urgency}
+                    className="p-3"
+                    onClick={clickable ? () => openByPropertyId(a.propertyId) : undefined}
+                  >
+                    <div className="flex items-center gap-3 pl-2">
+                      <UrgencyDot urgency={a.urgency} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm truncate">{a.title}</span>
+                          <span className={cn(
+                            'text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-medium',
+                            a.kind === 'flagged' ? 'bg-urgency-high-soft text-urgency-high' : 'bg-muted text-muted-foreground',
+                          )}>
+                            {a.kind === 'flagged' ? 'Flagged' : 'Expected'}
+                          </span>
+                          <AgingBadge days={a.agingDays} />
+                          <SlaTimer hoursLeft={a.hoursLeft} />
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{a.subtitle}</p>
+                        <p className="text-[11px] text-foreground/70 mt-0.5">
+                          <span className="font-medium">Next:</span> {a.nextStep}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{a.subtitle}</p>
-                      <p className="text-[11px] text-foreground/70 mt-0.5">
-                        <span className="font-medium">Next:</span> {a.nextStep}
-                      </p>
+                      <QuickActions context={a.contact} />
+                      {clickable ? (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openByPropertyId(a.propertyId); }}
+                          className="text-muted-foreground hover:text-foreground"
+                          title="Open property"
+                        >
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <Link to={a.link} onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-foreground">
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      )}
                     </div>
-                    <QuickActions context={a.contact} />
-                    <Link to={a.link} className="text-muted-foreground hover:text-foreground">
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </OperationalCard>
-              ))}
+                  </OperationalCard>
+                );
+              })}
               {actions.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-8">All clear — no critical actions.</p>
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nothing in this view for {PERIOD_LABEL[period].toLowerCase()}.
+                </p>
               )}
             </div>
           </section>
@@ -91,7 +178,12 @@ export default function PMCommand() {
             <SectionHeader title="Escalation risk" subtitle="Aging escalations and customer dissatisfaction" count={escalations.length} />
             <div className="grid md:grid-cols-2 gap-2">
               {escalations.slice(0, 8).map(e => (
-                <OperationalCard key={e.id} urgency={e.severity} className="p-3">
+                <OperationalCard
+                  key={e.id}
+                  urgency={e.severity}
+                  className="p-3"
+                  onClick={e.propertyId ? () => openByPropertyId(e.propertyId) : undefined}
+                >
                   <div className="pl-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-sm truncate">{e.property}</p>
@@ -141,7 +233,12 @@ export default function PMCommand() {
             <SectionHeader title="Daily follow-up center" subtitle="Pending callbacks and confirmations" count={followUps.length} />
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-2">
               {followUps.map(f => (
-                <OperationalCard key={f.id} urgency={f.agingDays >= 3 ? 'high' : f.agingDays >= 1 ? 'medium' : 'low'} className="p-3">
+                <OperationalCard
+                  key={f.id}
+                  urgency={f.agingDays >= 3 ? 'high' : f.agingDays >= 1 ? 'medium' : 'low'}
+                  className="p-3"
+                  onClick={f.propertyId ? () => openByPropertyId(f.propertyId) : undefined}
+                >
                   <div className="pl-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-medium truncate">{f.with}</p>
@@ -158,6 +255,12 @@ export default function PMCommand() {
             </div>
           </section>
         </main>
+
+        <PropertyDetailModal
+          property={openProperty}
+          open={!!openProperty}
+          onClose={() => setOpenProperty(null)}
+        />
       </div>
     </PageTransition>
   );

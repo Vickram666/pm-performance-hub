@@ -7,10 +7,29 @@ import { allPMs, cityStats as leaderCityStats } from '@/data/leaderboardData';
 import { Property } from '@/types/property';
 import { RenewalRecord } from '@/types/renewal';
 
+export type AccPeriod = 'today' | 'week' | 'month' | 'quarter';
+
+export const PERIOD_LABEL: Record<AccPeriod, string> = {
+  today: 'Today',
+  week: 'This week',
+  month: 'This month',
+  quarter: 'This quarter',
+};
+
+const PERIOD_DAYS: Record<AccPeriod, number> = {
+  today: 1,
+  week: 7,
+  month: 30,
+  quarter: 90,
+};
+
 export interface CriticalAction {
   id: string;
   urgency: 'critical' | 'high' | 'medium';
   category: 'renewal' | 'rent' | 'sr' | 'inspection' | 'followup' | 'churn';
+  /** expected = routine PM job (inspections, move-in/out, follow-ups);
+   *  flagged = system-detected exception (late rent, red renewal, SLA breach) */
+  kind: 'expected' | 'flagged';
   title: string;
   subtitle: string;
   nextStep: string;
@@ -18,10 +37,12 @@ export interface CriticalAction {
   agingDays: number;
   hoursLeft: number;
   link: string;
+  propertyId?: string;
 }
 
 export interface Escalation {
   id: string;
+  propertyId?: string;
   property: string;
   city: string;
   owner: string;
@@ -33,6 +54,7 @@ export interface Escalation {
 
 export interface FollowUp {
   id: string;
+  propertyId?: string;
   with: string;
   topic: string;
   due: string;
@@ -106,20 +128,25 @@ function filterRenewals(scope?: { city?: string; pm?: string }): RenewalRecord[]
   );
 }
 
-export function getCriticalActions(scope?: { city?: string; pm?: string }): CriticalAction[] {
+export function getCriticalActions(scope?: { city?: string; pm?: string }, period: AccPeriod = 'today'): CriticalAction[] {
   const props = filterProps(scope);
   const ren = filterRenewals(scope);
   const actions: CriticalAction[] = [];
+  const windowDays = PERIOD_DAYS[period];
+  // For renewals, expand window to roughly match (renewal cycle = ~90d before expiry)
+  const renewalWindow = period === 'today' ? 30 : period === 'week' ? 45 : period === 'month' ? 75 : 120;
 
-  // Red renewals
+  // Red renewals (flagged) — within renewal window
   ren.filter(r => r.status.riskLevel === 'red'
     && r.status.currentStage !== 'renewal_completed'
     && r.status.currentStage !== 'renewal_failed'
+    && r.lease.daysToExpiry <= renewalWindow
   ).forEach(r => {
     actions.push({
       id: `ren-${r.id}`,
       urgency: 'critical',
       category: 'renewal',
+      kind: 'flagged',
       title: `Renewal at risk — ${r.property.propertyName}`,
       subtitle: `${r.property.city} • ${r.lease.daysToExpiry}d to expiry`,
       nextStep: 'Reach out to owner immediately and document response',
@@ -130,12 +157,15 @@ export function getCriticalActions(scope?: { city?: string; pm?: string }): Crit
     });
   });
 
-  // Late rent
-  props.filter(p => !p.financial.onTimeRent && p.basic.tenantStatus === 'occupied').forEach(p => {
+  // Late rent (flagged)
+  props.filter(p => !p.financial.onTimeRent && p.basic.tenantStatus === 'occupied'
+    && (period === 'quarter' || p.financial.lateDays <= windowDays * 4 + 7)
+  ).forEach(p => {
     actions.push({
       id: `rent-${p.basic.propertyId}`,
       urgency: p.financial.lateDays > 10 ? 'critical' : p.financial.lateDays > 5 ? 'high' : 'medium',
       category: 'rent',
+      kind: 'flagged',
       title: `Rent ${p.financial.lateDays}d late — ${p.basic.propertyName}`,
       subtitle: `${p.basic.city} • Owner ${p.basic.ownerName}`,
       nextStep: 'Confirm tenant payment commitment and update note',
@@ -143,15 +173,17 @@ export function getCriticalActions(scope?: { city?: string; pm?: string }): Crit
       agingDays: p.financial.lateDays,
       hoursLeft: -p.financial.lateDays * 24,
       link: '/properties',
+      propertyId: p.basic.propertyId,
     });
   });
 
-  // SR SLA breaches
+  // SR SLA breaches (flagged)
   props.filter(p => p.operational.srSLAPercent < 75 && p.operational.totalSRs >= 3).forEach(p => {
     actions.push({
       id: `sr-${p.basic.propertyId}`,
       urgency: p.operational.srSLAPercent < 60 ? 'high' : 'medium',
       category: 'sr',
+      kind: 'flagged',
       title: `SR SLA at ${p.operational.srSLAPercent}% — ${p.basic.propertyName}`,
       subtitle: `${p.operational.totalSRs} requests • ${p.operational.totalSRs - p.operational.srClosedWithinSLA} breached`,
       nextStep: 'Close open service requests and update tenant',
@@ -159,15 +191,17 @@ export function getCriticalActions(scope?: { city?: string; pm?: string }): Crit
       agingDays: Math.round((100 - p.operational.srSLAPercent) / 5),
       hoursLeft: 8,
       link: '/properties',
+      propertyId: p.basic.propertyId,
     });
   });
 
-  // Pending move-in/out reports
+  // Pending move-in reports (expected PM job)
   props.filter(p => p.basic.tenantStatus === 'occupied' && !p.operational.moveInReportCompleted).forEach(p => {
     actions.push({
       id: `mi-${p.basic.propertyId}`,
       urgency: 'medium',
       category: 'inspection',
+      kind: 'expected',
       title: `Move-in report pending — ${p.basic.propertyName}`,
       subtitle: `${p.basic.city} • Tenant occupied`,
       nextStep: 'Complete walkthrough with photos and upload',
@@ -175,13 +209,32 @@ export function getCriticalActions(scope?: { city?: string; pm?: string }): Crit
       agingDays: 5,
       hoursLeft: 48,
       link: '/properties',
+      propertyId: p.basic.propertyId,
+    });
+  });
+
+  // Pending inspections (expected)
+  props.filter(p => p.operational.inspectionStatus === 'pending').slice(0, 20).forEach(p => {
+    actions.push({
+      id: `insp-${p.basic.propertyId}`,
+      urgency: 'medium',
+      category: 'inspection',
+      kind: 'expected',
+      title: `Quarterly inspection due — ${p.basic.propertyName}`,
+      subtitle: `${p.basic.city} • Routine PM walkthrough`,
+      nextStep: 'Schedule visit and submit inspection report',
+      contact: p.basic.ownerName,
+      agingDays: 3,
+      hoursLeft: 72,
+      link: '/properties',
+      propertyId: p.basic.propertyId,
     });
   });
 
   const order = { critical: 0, high: 1, medium: 2 } as const;
   return actions
     .sort((a, b) => order[a.urgency] - order[b.urgency] || b.agingDays - a.agingDays)
-    .slice(0, 40);
+    .slice(0, 60);
 }
 
 export function getEscalations(scope?: { city?: string; pm?: string }): Escalation[] {
@@ -196,6 +249,7 @@ export function getEscalations(scope?: { city?: string; pm?: string }): Escalati
       if (reasons.length === 0) reasons.push('high risk');
       return {
         id: `esc-${p.basic.propertyId}`,
+        propertyId: p.basic.propertyId,
         property: p.basic.propertyName,
         city: p.basic.city,
         owner: p.basic.ownerName,
@@ -251,6 +305,7 @@ export function getFollowUps(scope?: { city?: string; pm?: string }): FollowUp[]
     .slice(0, 12)
     .map((p, i) => ({
       id: `fu-${p.basic.propertyId}`,
+      propertyId: p.basic.propertyId,
       with: p.basic.ownerName,
       topic: !p.financial.onTimeRent
         ? `Rent confirmation — ${p.basic.propertyName}`
