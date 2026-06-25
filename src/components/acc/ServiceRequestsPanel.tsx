@@ -1,18 +1,19 @@
 import { useMemo, useState } from 'react';
-import { Wrench, ArrowRight, MessageCircle } from 'lucide-react';
+import { Wrench, Clock } from 'lucide-react';
 import { OperationalCard, SectionHeader } from '@/components/acc/primitives/OperationalCard';
 import { AgingBadge, UrgencyDot } from '@/components/acc/primitives/AgingBadge';
 import { ScoreImpactBadge } from './ScoreImpactBadge';
+import { GlossaryHint } from './Glossary';
+import { TakeActionMenu } from './TakeActionMenu';
+import { AuditTimeline } from './AuditTimeline';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { getServiceRequests, SR_STAGES, SR_STAGE_LABEL, SR_NEXT_ACTION, type ServiceRequest, type SrStage } from '@/data/accOperationsData';
 import { cn } from '@/lib/utils';
-import type { CommunicateContext } from './CommunicateModal';
 
 interface Props {
   onOpenProperty: (propertyId: string) => void;
-  onCommunicate: (ctx: CommunicateContext) => void;
 }
 
 const STAGE_TONE: Record<SrStage, string> = {
@@ -24,9 +25,10 @@ const STAGE_TONE: Record<SrStage, string> = {
   closed: 'bg-muted text-muted-foreground',
 };
 
-export function ServiceRequestsPanel({ onOpenProperty, onCommunicate }: Props) {
+export function ServiceRequestsPanel({ onOpenProperty }: Props) {
   const all = useMemo(() => getServiceRequests(), []);
   const [stage, setStage] = useState<'all' | SrStage>('all');
+  const [audit, setAudit] = useState<{ id: string; title: string; prop: string } | null>(null);
 
   const filtered = useMemo(() => stage === 'all' ? all : all.filter(s => s.stage === stage), [all, stage]);
 
@@ -42,8 +44,8 @@ export function ServiceRequestsPanel({ onOpenProperty, onCommunicate }: Props) {
   return (
     <section>
       <SectionHeader
-        title="Service requests"
-        subtitle={`${all.length} total · ${breached} breached TAT · live end-to-end tracking`}
+        title={<span className="inline-flex items-center gap-1.5">Service requests <GlossaryHint id="sla" /></span>}
+        subtitle={`${all.length} total · ${breached} breached TAT · end-to-end tracking`}
         count={openOnly.length}
         right={
           <Tabs value={stage} onValueChange={(v) => setStage(v as typeof stage)}>
@@ -61,17 +63,20 @@ export function ServiceRequestsPanel({ onOpenProperty, onCommunicate }: Props) {
 
       <div className="space-y-2">
         {filtered.slice(0, 25).map(sr => (
-          <SRCard key={sr.id} sr={sr} onOpenProperty={onOpenProperty} onCommunicate={onCommunicate} />
+          <SRCard key={sr.id} sr={sr} onOpenProperty={onOpenProperty}
+            onOpenAudit={() => setAudit({ id: sr.id, title: sr.title, prop: sr.propertyName })} />
         ))}
         {filtered.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">No service requests in this view.</p>
         )}
       </div>
+
+      <AuditTimeline open={!!audit} onClose={() => setAudit(null)} taskId={audit?.id ?? null} taskTitle={audit?.title} propertyName={audit?.prop} />
     </section>
   );
 }
 
-function SRCard({ sr, onOpenProperty, onCommunicate }: { sr: ServiceRequest } & Props) {
+function SRCard({ sr, onOpenProperty, onOpenAudit }: { sr: ServiceRequest; onOpenProperty: (id: string) => void; onOpenAudit: () => void }) {
   const urgency = !sr.withinTat && sr.stage !== 'closed' ? 'critical' : sr.stage === 'open' ? 'high' : 'medium';
   const progress = ((SR_STAGES.indexOf(sr.stage) + 1) / SR_STAGES.length) * 100;
   return (
@@ -87,8 +92,8 @@ function SRCard({ sr, onOpenProperty, onCommunicate }: { sr: ServiceRequest } & 
           </span>
           <AgingBadge days={sr.raisedDaysAgo} />
           {!sr.withinTat && sr.stage !== 'closed' && (
-            <span className="text-[10px] font-semibold text-urgency-critical">
-              TAT breached ({sr.elapsedHours}h / {sr.tatHours}h)
+            <span className="text-[10px] font-semibold text-urgency-critical inline-flex items-center gap-0.5">
+              <Clock className="h-3 w-3" /> TAT breached ({sr.elapsedHours}h / {sr.tatHours}h)
             </span>
           )}
           <ScoreImpactBadge category="sr" aging={sr.raisedDaysAgo} />
@@ -97,7 +102,6 @@ function SRCard({ sr, onOpenProperty, onCommunicate }: { sr: ServiceRequest } & 
           {sr.propertyName} · {sr.city} · Owner {sr.ownerName} · Vendor {sr.vendor}
         </p>
 
-        {/* Stage progress bar */}
         <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
           <div className={cn('h-full transition-all', sr.withinTat ? 'bg-urgency-low' : 'bg-urgency-critical')} style={{ width: `${progress}%` }} />
         </div>
@@ -105,23 +109,8 @@ function SRCard({ sr, onOpenProperty, onCommunicate }: { sr: ServiceRequest } & 
           <p className="text-[11px] text-foreground/70">
             <span className="font-medium">Next:</span> {SR_NEXT_ACTION[sr.stage]}
           </p>
-          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
-              onClick={() => onCommunicate({
-                taskTitle: sr.title,
-                nextStep: SR_NEXT_ACTION[sr.stage],
-                contactName: sr.ownerName,
-                contactPhone: sr.tenantContact,
-                propertyName: sr.propertyName,
-                propertyId: sr.propertyId,
-                category: 'Service request',
-              })}>
-              <MessageCircle className="h-3 w-3" /> Communicate
-            </Button>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => onOpenProperty(sr.propertyId)}>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          <TakeActionMenu kind="sr" taskTitle={sr.title} propertyName={sr.propertyName} propertyId={sr.propertyId}
+            onOpenProperty={onOpenProperty} onOpenAudit={onOpenAudit} />
         </div>
       </div>
     </OperationalCard>

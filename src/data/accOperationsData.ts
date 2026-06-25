@@ -2,6 +2,72 @@
 // Deterministically derived from existing property mock data so every property
 // has a believable end-to-end trail.
 
+// ---------- Audit timeline ----------
+export interface AuditEvent {
+  kind: 'created' | 'status_change' | 'assigned' | 'comment' | 'breach' | 'resolved';
+  label: string;
+  actor: string;
+  role: 'PM' | 'TL' | 'Vendor' | 'System' | 'Tenant' | 'Owner';
+  timestamp: string;   // human-readable
+  detail?: string;
+}
+
+function fmtDate(daysAgo: number, hour = 10) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  d.setHours(hour, (daysAgo * 7) % 60, 0, 0);
+  return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function h(s: string): number {
+  let n = 0;
+  for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(n);
+}
+
+const ACTORS = ['Ravi K.', 'Priya N.', 'Arjun M.', 'Sneha R.', 'Vikram S.'];
+const VENDORS_NAMES = ['Cleanify ops', 'FixIt vendor', 'UrbanCare ops'];
+
+export function getAuditTrail(taskId: string): AuditEvent[] {
+  const seed = h(taskId);
+  const pm = ACTORS[seed % ACTORS.length];
+  const tl = ACTORS[(seed + 2) % ACTORS.length];
+  const vendor = VENDORS_NAMES[seed % VENDORS_NAMES.length];
+
+  if (taskId.startsWith('sr-')) {
+    const raised = 6 + (seed % 8);
+    return [
+      { kind: 'created', label: 'SR raised by tenant', actor: 'Tenant', role: 'Tenant', timestamp: fmtDate(raised, 9), detail: 'Issue reported via app' },
+      { kind: 'assigned', label: `Assigned to ${vendor}`, actor: pm, role: 'PM', timestamp: fmtDate(raised - 1, 11) },
+      { kind: 'comment', label: 'Vendor confirmed visit slot', actor: vendor, role: 'Vendor', timestamp: fmtDate(raised - 2, 14), detail: 'ETA: next morning 10am' },
+      ...(seed % 3 === 0 ? [{ kind: 'breach' as const, label: 'TAT breached', actor: 'System', role: 'System' as const, timestamp: fmtDate(raised - 3, 10), detail: 'Elapsed > TAT window' }] : []),
+      { kind: 'status_change', label: 'Moved to In progress', actor: pm, role: 'PM', timestamp: fmtDate(Math.max(0, raised - 4), 16) },
+    ];
+  }
+  if (taskId.startsWith('rent-')) {
+    const due = 4 + (seed % 10);
+    return [
+      { kind: 'created', label: 'Rent invoice raised', actor: 'System', role: 'System', timestamp: fmtDate(due + 5, 9) },
+      { kind: 'comment', label: 'Reminder sent to tenant', actor: pm, role: 'PM', timestamp: fmtDate(due, 11) },
+      ...(due > 7 ? [{ kind: 'breach' as const, label: 'Marked overdue', actor: 'System', role: 'System' as const, timestamp: fmtDate(due - 7, 0), detail: '7+ days past due' }] : []),
+      ...(seed % 4 === 0 ? [{ kind: 'status_change' as const, label: 'Escalated to TL', actor: pm, role: 'PM' as const, timestamp: fmtDate(2, 15) }] : []),
+      { kind: 'comment', label: 'Payment commitment captured', actor: tl, role: 'TL', timestamp: fmtDate(1, 12), detail: 'Tenant promised by month end' },
+    ];
+  }
+  if (taskId.startsWith('insp-')) {
+    return [
+      { kind: 'created', label: 'Inspection task created', actor: 'System', role: 'System', timestamp: fmtDate(12, 9) },
+      { kind: 'comment', label: 'Tenant notified', actor: pm, role: 'PM', timestamp: fmtDate(10, 10) },
+      { kind: 'status_change', label: 'Walkthrough scheduled', actor: pm, role: 'PM', timestamp: fmtDate(6, 14) },
+      ...(seed % 3 !== 0 ? [{ kind: 'breach' as const, label: 'Overdue — schedule missed', actor: 'System', role: 'System' as const, timestamp: fmtDate(3, 0) }] : [{ kind: 'resolved' as const, label: 'Report uploaded', actor: pm, role: 'PM' as const, timestamp: fmtDate(1, 17) }]),
+    ];
+  }
+  return [
+    { kind: 'created', label: 'Task created', actor: 'System', role: 'System', timestamp: fmtDate(3, 10) },
+    { kind: 'comment', label: 'PM acknowledged', actor: pm, role: 'PM', timestamp: fmtDate(2, 11) },
+  ];
+}
+
 import { allProperties } from '@/data/propertyData';
 import type { Property } from '@/types/property';
 

@@ -41,7 +41,7 @@ export function SectionHeader({
   count,
   right,
 }: {
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   count?: number;
   right?: ReactNode;
