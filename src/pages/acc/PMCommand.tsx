@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  ListChecks, AlertTriangle, RefreshCw, Home, Timer, MessageCircle,
-  ShieldAlert, ArrowRight, Briefcase, Flag, Wrench, IndianRupee, ClipboardCheck,
+  ListChecks, AlertTriangle, RefreshCw, Home, Timer, ShieldAlert,
+  ArrowRight, Briefcase, Flag, Wrench, IndianRupee, ClipboardCheck, MessageCircle,
 } from 'lucide-react';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { KpiPill, KpiBar } from '@/components/acc/primitives/KpiPill';
@@ -9,15 +9,18 @@ import { OperationalCard, SectionHeader } from '@/components/acc/primitives/Oper
 import { AgingBadge, SlaTimer, UrgencyDot } from '@/components/acc/primitives/AgingBadge';
 import { PipelineFunnel } from '@/components/acc/primitives/PipelineFunnel';
 import { ScoreImpactBadge } from '@/components/acc/ScoreImpactBadge';
-import { TaskFilters, DateRangePicker, EMPTY_TASK_FILTERS, type TaskFilterState } from '@/components/acc/TaskFilters';
-import { CommunicateModal, type CommunicateContext } from '@/components/acc/CommunicateModal';
+import { TaskFilters, EMPTY_TASK_FILTERS, type TaskFilterState } from '@/components/acc/TaskFilters';
+import { PeriodControls } from '@/components/acc/PeriodControls';
+import { PeriodKpiStrip } from '@/components/acc/PeriodKpiStrip';
+import { GlossaryHint } from '@/components/acc/Glossary';
+import { TakeActionMenu } from '@/components/acc/TakeActionMenu';
 import { ServiceRequestsPanel } from '@/components/acc/ServiceRequestsPanel';
 import { RentTrackerPanel } from '@/components/acc/RentTrackerPanel';
 import { InspectionsPanel } from '@/components/acc/InspectionsPanel';
 import {
   getCriticalActions, getEscalations, getFollowUps,
   getOperationalSummary, getPipelineCounts,
-  PERIOD_LABEL, AccPeriod, type CriticalAction,
+  AccPeriod,
 } from '@/data/accAggregators';
 import { allProperties } from '@/data/propertyData';
 import { mockPMData } from '@/data/mockData';
@@ -25,10 +28,7 @@ import { Link } from 'react-router-dom';
 import { Property } from '@/types/property';
 import { PropertyDetailModal } from '@/components/property/PropertyDetailModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-const PERIODS: AccPeriod[] = ['today', 'week', 'month', 'quarter'];
 
 export default function PMCommand() {
   const [period, setPeriod] = useState<AccPeriod>('today');
@@ -36,7 +36,6 @@ export default function PMCommand() {
   const [filters, setFilters] = useState<TaskFilterState>(EMPTY_TASK_FILTERS);
   const [activeTab, setActiveTab] = useState('actions');
   const [openProperty, setOpenProperty] = useState<Property | null>(null);
-  const [commCtx, setCommCtx] = useState<CommunicateContext | null>(null);
 
   const summary = useMemo(() => getOperationalSummary(), []);
   const allActions = useMemo(() => getCriticalActions(undefined, period), [period]);
@@ -73,18 +72,6 @@ export default function PMCommand() {
     if (prop) setOpenProperty(prop);
   };
 
-  const communicateFromAction = (a: CriticalAction) => {
-    const prop = a.propertyId ? propertyById.get(a.propertyId) : undefined;
-    setCommCtx({
-      taskTitle: a.title,
-      nextStep: a.nextStep,
-      contactName: a.contact || prop?.basic.ownerName || 'Owner',
-      propertyName: prop?.basic.propertyName,
-      propertyId: a.propertyId,
-      category: a.category,
-    });
-  };
-
   return (
     <PageTransition>
       <div className="min-h-screen bg-background pb-16">
@@ -95,30 +82,12 @@ export default function PMCommand() {
               <h1 className="text-xl font-semibold tracking-tight">
                 {mockPMData.profile.name} · Command Center
               </h1>
-              <p className="text-xs text-muted-foreground">
-                Operational inbox — viewing <span className="text-foreground font-medium">
-                  {filters.dateRange ? 'Custom range' : PERIOD_LABEL[period]}
-                </span>
-              </p>
+              <p className="text-xs text-muted-foreground">Operational inbox — period-filtered</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="inline-flex rounded-md border border-border/70 bg-card p-0.5">
-                {PERIODS.map(p => (
-                  <button
-                    key={p}
-                    onClick={() => { setPeriod(p); setFilters(f => ({ ...f, dateRange: null })); }}
-                    className={cn(
-                      'px-2.5 py-1 text-xs rounded-sm transition-colors',
-                      period === p && !filters.dateRange ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {PERIOD_LABEL[p]}
-                  </button>
-                ))}
-              </div>
-              <DateRangePicker
-                value={filters.dateRange}
-                onChange={(r) => setFilters(f => ({ ...f, dateRange: r }))}
+              <PeriodControls
+                period={period} onPeriodChange={setPeriod}
+                dateRange={filters.dateRange} onDateRangeChange={(r) => setFilters(f => ({ ...f, dateRange: r }))}
               />
               <Link to="/" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
                 My Score view <ArrowRight className="h-3 w-3" />
@@ -126,6 +95,10 @@ export default function PMCommand() {
             </div>
           </div>
         </header>
+
+        <div className="container py-4">
+          <PeriodKpiStrip />
+        </div>
 
         <KpiBar>
           <KpiPill label="Today's tasks" value={summary.tasks} tone={summary.tasks > 6 ? 'high' : 'neutral'} icon={<ListChecks className="h-4 w-4" />} />
@@ -150,8 +123,8 @@ export default function PMCommand() {
             <TabsContent value="actions" className="space-y-6 mt-4">
               <section>
                 <SectionHeader
-                  title="Action queue"
-                  subtitle="Click any row to open property. Flagged = system-detected risk. Expected = your routine PM job."
+                  title={<span className="inline-flex items-center gap-1.5">Action queue <GlossaryHint id="flagged" /></span>}
+                  subtitle="Flagged = system-detected risk · Expected = your routine PM job"
                   count={actions.length}
                   right={
                     <div className="flex items-center gap-2 flex-wrap">
@@ -200,22 +173,12 @@ export default function PMCommand() {
                               <span className="font-medium">Next:</span> {a.nextStep}
                             </p>
                           </div>
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"
-                              onClick={() => communicateFromAction(a)}>
-                              <MessageCircle className="h-3 w-3" /> Communicate
-                            </Button>
-                            {clickable ? (
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0"
-                                onClick={() => openByPropertyId(a.propertyId)} title="Open property">
-                                <ArrowRight className="h-3.5 w-3.5" />
-                              </Button>
-                            ) : (
-                              <Link to={a.link} className="text-muted-foreground hover:text-foreground p-1">
-                                <ArrowRight className="h-3.5 w-3.5" />
-                              </Link>
-                            )}
-                          </div>
+                          <TakeActionMenu
+                            kind={a.category === 'sr' ? 'sr' : a.category === 'rent' ? 'rent' : a.category === 'inspection' ? 'inspection' : a.category === 'renewal' ? 'renewal' : 'followup'}
+                            taskTitle={a.title}
+                            propertyId={a.propertyId}
+                            onOpenProperty={openByPropertyId}
+                          />
                         </div>
                       </OperationalCard>
                     );
@@ -229,7 +192,11 @@ export default function PMCommand() {
               </section>
 
               <section>
-                <SectionHeader title="Escalation risk" subtitle="Aging escalations and customer dissatisfaction" count={escalations.length} />
+                <SectionHeader
+                  title={<span className="inline-flex items-center gap-1.5">Escalation risk <GlossaryHint id="escalation" /></span>}
+                  subtitle="Aging escalations and customer dissatisfaction"
+                  count={escalations.length}
+                />
                 <div className="grid md:grid-cols-2 gap-2">
                   {escalations.slice(0, 8).map(e => (
                     <OperationalCard
@@ -247,17 +214,7 @@ export default function PMCommand() {
                         <p className="text-xs mt-1">{e.reason}</p>
                         <div className="flex items-center justify-between mt-1.5">
                           <p className="text-[11px] text-muted-foreground">Root cause: <span className="text-foreground/80">{e.rootCause}</span></p>
-                          <Button size="sm" variant="ghost" className="h-6 text-xs gap-1" onClick={(ev) => {
-                            ev.stopPropagation();
-                            setCommCtx({
-                              taskTitle: `Escalation — ${e.reason}`,
-                              nextStep: `Resolve ${e.rootCause.toLowerCase()} and update owner`,
-                              contactName: e.owner, propertyName: e.property, propertyId: e.propertyId,
-                              category: 'Escalation',
-                            });
-                          }}>
-                            <MessageCircle className="h-3 w-3" /> Reach out
-                          </Button>
+                          <TakeActionMenu kind="escalation" taskTitle={`Escalation — ${e.reason}`} propertyName={e.property} propertyId={e.propertyId} onOpenProperty={openByPropertyId} />
                         </div>
                       </div>
                     </OperationalCard>
@@ -293,24 +250,13 @@ export default function PMCommand() {
             </TabsContent>
 
             <TabsContent value="sr" className="mt-4">
-              <ServiceRequestsPanel
-                onOpenProperty={openByPropertyId}
-                onCommunicate={setCommCtx}
-              />
+              <ServiceRequestsPanel onOpenProperty={openByPropertyId} />
             </TabsContent>
-
             <TabsContent value="rent" className="mt-4">
-              <RentTrackerPanel
-                onOpenProperty={openByPropertyId}
-                onCommunicate={setCommCtx}
-              />
+              <RentTrackerPanel onOpenProperty={openByPropertyId} />
             </TabsContent>
-
             <TabsContent value="inspections" className="mt-4">
-              <InspectionsPanel
-                onOpenProperty={openByPropertyId}
-                onCommunicate={setCommCtx}
-              />
+              <InspectionsPanel onOpenProperty={openByPropertyId} />
             </TabsContent>
 
             <TabsContent value="pipelines" className="space-y-6 mt-4">
@@ -348,11 +294,6 @@ export default function PMCommand() {
           property={openProperty}
           open={!!openProperty}
           onClose={() => setOpenProperty(null)}
-        />
-        <CommunicateModal
-          open={!!commCtx}
-          context={commCtx}
-          onClose={() => setCommCtx(null)}
         />
       </div>
     </PageTransition>

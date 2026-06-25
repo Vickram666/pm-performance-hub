@@ -1,10 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Home, TrendingDown, RefreshCw, AlertTriangle, Smile, Users, BarChart3 } from 'lucide-react';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { KpiPill, KpiBar } from '@/components/acc/primitives/KpiPill';
 import { OperationalCard, SectionHeader } from '@/components/acc/primitives/OperationalCard';
-import { getCityHealth, getChurnIntelligence } from '@/data/accAggregators';
+import { PeriodControls } from '@/components/acc/PeriodControls';
+import { PeriodKpiStrip } from '@/components/acc/PeriodKpiStrip';
+import { GlossaryHint } from '@/components/acc/Glossary';
+import { getCityHealth, getChurnIntelligence, type AccPeriod } from '@/data/accAggregators';
 import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 function heatTone(value: number, invert = false) {
   const v = invert ? 100 - value : value;
@@ -17,6 +21,8 @@ function heatTone(value: number, invert = false) {
 export default function CityStrategic() {
   const cities = useMemo(() => getCityHealth(), []);
   const churn = useMemo(() => getChurnIntelligence(), []);
+  const [period, setPeriod] = useState<AccPeriod>('month');
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
 
   const totals = cities.reduce(
     (a, c) => ({
@@ -36,12 +42,19 @@ export default function CityStrategic() {
     <PageTransition>
       <div className="min-h-screen bg-background pb-16">
         <header className="border-b bg-card">
-          <div className="container py-4">
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">City Lead</p>
-            <h1 className="text-xl font-semibold tracking-tight">Strategic Overview</h1>
-            <p className="text-xs text-muted-foreground">Where are we winning, and where are we losing customers?</p>
+          <div className="container py-4 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">City Lead</p>
+              <h1 className="text-xl font-semibold tracking-tight">Strategic Overview</h1>
+              <p className="text-xs text-muted-foreground">Where are we winning, and where are we losing customers?</p>
+            </div>
+            <PeriodControls period={period} onPeriodChange={setPeriod} dateRange={dateRange} onDateRangeChange={setDateRange} />
           </div>
         </header>
+
+        <div className="container py-4">
+          <PeriodKpiStrip />
+        </div>
 
         <KpiBar>
           <KpiPill label="Portfolio" value={totals.portfolio} icon={<Home className="h-4 w-4" />} />
@@ -54,9 +67,11 @@ export default function CityStrategic() {
         </KpiBar>
 
         <main className="container py-6 space-y-8">
-          {/* Churn Intelligence */}
           <section>
-            <SectionHeader title="Churn intelligence" subtitle="Renewal vs re-renting leakage" />
+            <SectionHeader
+              title={<span className="inline-flex items-center gap-1.5">Churn intelligence <GlossaryHint id="churn" /></span>}
+              subtitle="Renewal vs re-renting leakage"
+            />
             <div className="grid md:grid-cols-2 gap-3">
               <OperationalCard className="p-4">
                 <div className="flex items-end justify-between mb-3">
@@ -102,19 +117,22 @@ export default function CityStrategic() {
             </div>
           </section>
 
-          {/* Heatmap */}
           <section>
-            <SectionHeader title="Operational heatmap" subtitle="Cities × operational dimensions" right={<span className="text-xs text-muted-foreground"><BarChart3 className="h-3 w-3 inline mr-1" />green = strong · red = weak</span>} />
+            <SectionHeader
+              title="Operational heatmap"
+              subtitle="Cities × operational dimensions"
+              right={<span className="text-xs text-muted-foreground"><BarChart3 className="h-3 w-3 inline mr-1" />green = strong · red = weak</span>}
+            />
             <OperationalCard className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-muted/40">
                   <tr>
                     <th className="text-left p-3">City</th>
                     <th className="p-2">Occupancy</th>
-                    <th className="p-2">SLA</th>
+                    <th className="p-2"><span className="inline-flex items-center gap-1">SLA <GlossaryHint id="sla" /></span></th>
                     <th className="p-2">CSAT</th>
                     <th className="p-2">Retention</th>
-                    <th className="p-2">Escalation rate</th>
+                    <th className="p-2"><span className="inline-flex items-center gap-1">Esc. rate <GlossaryHint id="escalation" /></span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -138,7 +156,6 @@ export default function CityStrategic() {
             </OperationalCard>
           </section>
 
-          {/* Coaching */}
           <section>
             <SectionHeader title="Team coaching & review" subtitle="Recurring failure patterns" />
             <div className="grid md:grid-cols-3 gap-2">

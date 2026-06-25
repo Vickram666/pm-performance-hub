@@ -5,12 +5,20 @@ import { KpiPill, KpiBar } from '@/components/acc/primitives/KpiPill';
 import { OperationalCard, SectionHeader } from '@/components/acc/primitives/OperationalCard';
 import { AgingBadge, UrgencyDot } from '@/components/acc/primitives/AgingBadge';
 import { PipelineFunnel } from '@/components/acc/primitives/PipelineFunnel';
-import { ACC_CITIES, getCityHealth, getEscalations, getOperationalSummary, getPipelineCounts, getPMMatrix } from '@/data/accAggregators';
+import { PeriodControls } from '@/components/acc/PeriodControls';
+import { PeriodKpiStrip } from '@/components/acc/PeriodKpiStrip';
+import { GlossaryHint } from '@/components/acc/Glossary';
+import { TakeActionMenu } from '@/components/acc/TakeActionMenu';
+import { ACC_CITIES, getCityHealth, getEscalations, getOperationalSummary, getPipelineCounts, getPMMatrix, type AccPeriod } from '@/data/accAggregators';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 export default function TLWarRoom() {
   const [city, setCity] = useState<string>(ACC_CITIES[0]);
+  const [period, setPeriod] = useState<AccPeriod>('week');
+  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+
   const summary = useMemo(() => getOperationalSummary({ city }), [city]);
   const matrix = useMemo(() => getPMMatrix(city), [city]);
   const escalations = useMemo(() => getEscalations({ city }), [city]);
@@ -25,16 +33,23 @@ export default function TLWarRoom() {
             <div>
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Team Lead</p>
               <h1 className="text-xl font-semibold tracking-tight">{city} War Room</h1>
-              <p className="text-xs text-muted-foreground">Where is my city operation failing today?</p>
+              <p className="text-xs text-muted-foreground">Where is my city operation failing right now?</p>
             </div>
-            <Select value={city} onValueChange={setCity}>
-              <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ACC_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={city} onValueChange={setCity}>
+                <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ACC_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <PeriodControls period={period} onPeriodChange={setPeriod} dateRange={dateRange} onDateRangeChange={setDateRange} />
+            </div>
           </div>
         </header>
+
+        <div className="container py-4">
+          <PeriodKpiStrip scope={{ city }} />
+        </div>
 
         <KpiBar>
           <KpiPill label="Active portfolio" value={cityHealth?.portfolio ?? 0} icon={<Home className="h-4 w-4" />} />
@@ -57,9 +72,13 @@ export default function TLWarRoom() {
                     <th className="text-right p-3">Portfolio</th>
                     <th className="text-right p-3">Tasks</th>
                     <th className="text-right p-3">Escalations</th>
-                    <th className="text-right p-3">SLA</th>
+                    <th className="text-right p-3">
+                      <span className="inline-flex items-center gap-1">SLA <GlossaryHint id="sla" /></span>
+                    </th>
                     <th className="text-right p-3">Renewals</th>
-                    <th className="text-right p-3">Churn risk</th>
+                    <th className="text-right p-3">
+                      <span className="inline-flex items-center gap-1">Churn <GlossaryHint id="churn" /></span>
+                    </th>
                     <th className="text-right p-3">CSAT</th>
                     <th className="text-right p-3">Overdue</th>
                     <th className="text-right p-3 pr-4">Status</th>
@@ -100,7 +119,10 @@ export default function TLWarRoom() {
           </section>
 
           <section>
-            <SectionHeader title="Escalation command center" subtitle="Aging-sorted, by severity" count={escalations.length} />
+            <SectionHeader
+              title={<span className="inline-flex items-center gap-1.5">Escalation command center <GlossaryHint id="escalation" /></span>}
+              subtitle="Aging-sorted, by severity" count={escalations.length}
+            />
             <div className="grid md:grid-cols-2 gap-2">
               {escalations.slice(0, 10).map(e => (
                 <OperationalCard key={e.id} urgency={e.severity} className="p-3">
@@ -113,6 +135,9 @@ export default function TLWarRoom() {
                       </div>
                       <p className="text-xs text-muted-foreground">{e.city} · {e.owner}</p>
                       <p className="text-xs mt-1">{e.reason} · <span className="text-muted-foreground">{e.rootCause}</span></p>
+                      <div className="mt-2 flex justify-end">
+                        <TakeActionMenu kind="escalation" taskTitle={`Escalation — ${e.reason}`} propertyName={e.property} propertyId={e.propertyId} />
+                      </div>
                     </div>
                   </div>
                 </OperationalCard>
