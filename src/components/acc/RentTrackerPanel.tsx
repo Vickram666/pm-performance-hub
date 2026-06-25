@@ -47,7 +47,7 @@ export function RentTrackerPanel({ onOpenProperty }: Props) {
   return (
     <section>
       <SectionHeader
-        title={<span className="inline-flex items-center gap-1.5">Rent ledger <GlossaryHint id="defaulter" /></span> as unknown as string}
+        title={<span className="inline-flex items-center gap-1.5">Rent ledger <GlossaryHint id="defaulter" /></span>}
         subtitle={`₹${(totalAtRisk / 1000).toFixed(0)}K at risk · chronic defaulters tracked separately`}
         count={filtered.filter(r => r.status !== 'paid').length}
         right={

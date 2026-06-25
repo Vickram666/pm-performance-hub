@@ -44,7 +44,7 @@ export function ServiceRequestsPanel({ onOpenProperty }: Props) {
   return (
     <section>
       <SectionHeader
-        title={<span className="inline-flex items-center gap-1.5">Service requests <GlossaryHint id="sla" /></span> as unknown as string}
+        title={<span className="inline-flex items-center gap-1.5">Service requests <GlossaryHint id="sla" /></span>}
         subtitle={`${all.length} total · ${breached} breached TAT · end-to-end tracking`}
         count={openOnly.length}
         right={
