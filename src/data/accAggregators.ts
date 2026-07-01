@@ -460,3 +460,63 @@ export function getCityRanking() {
 }
 
 export const ACC_CITIES = leaderCityStats.map(c => c.city);
+
+// ---- Re-Renting Queue (move-out → vacant → broker/self-rent → lost) ----
+export type ReRentStage = 'move_out' | 'vacant' | 'broker_assigned' | 'owner_self_rent' | 'lost';
+
+export const RERENT_STAGE_LABEL: Record<ReRentStage, string> = {
+  move_out: 'Move-out initiated',
+  vacant: 'Vacant',
+  broker_assigned: 'Broker assigned',
+  owner_self_rent: 'Owner self-rent',
+  lost: 'Inventory lost',
+};
+
+export interface ReRentRow {
+  id: string;
+  propertyId: string;
+  propertyName: string;
+  city: string;
+  ownerName: string;
+  moveOutDate: string;
+  daysVacant: number;
+  stage: ReRentStage;
+  broker: string;
+  nextAction: string;
+}
+
+function hash2(s: string) {
+  let n = 0; for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(n);
+}
+
+export function getReRentingQueue(scope?: { city?: string; pm?: string }): ReRentRow[] {
+  const props = filterProps(scope).filter(p => p.basic.tenantStatus === 'vacant');
+  return props.map((p, i) => {
+    const seed = hash2('rr-' + p.basic.propertyId);
+    const daysVacant = 3 + (seed % 55);
+    const stageIdx = seed % 5;
+    const stage: ReRentStage = (['move_out', 'vacant', 'broker_assigned', 'owner_self_rent', 'lost'] as ReRentStage[])[stageIdx];
+    const nextByStage: Record<ReRentStage, string> = {
+      move_out: 'Complete move-out inspection',
+      vacant: 'Assign broker or list inventory',
+      broker_assigned: 'Chase broker for tenant leads',
+      owner_self_rent: 'Confirm owner intent — retention call',
+      lost: 'Log churn reason and archive',
+    };
+    const d = new Date(); d.setDate(d.getDate() - daysVacant);
+    return {
+      id: `rr-${p.basic.propertyId}-${i}`,
+      propertyId: p.basic.propertyId,
+      propertyName: p.basic.propertyName,
+      city: p.basic.city,
+      ownerName: p.basic.ownerName,
+      moveOutDate: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+      daysVacant,
+      stage,
+      broker: stage === 'broker_assigned' ? ['Urban Brokers', 'HomeMove', 'RentPro'][seed % 3] : '—',
+      nextAction: nextByStage[stage],
+    };
+  }).sort((a, b) => b.daysVacant - a.daysVacant);
+}
+
