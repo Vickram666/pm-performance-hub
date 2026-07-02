@@ -269,7 +269,9 @@ export default function PMCommand() {
                     {actions.length === 0 && <WBEmpty colSpan={9} />}
                   </WBBody>
                 </WorkbenchTable>
+                )}
               </WBSection>
+
 
               {/* Section B — Escalation & Risk (dense) */}
               <WBSection
