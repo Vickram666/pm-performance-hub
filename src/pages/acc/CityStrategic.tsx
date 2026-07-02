@@ -106,24 +106,26 @@ export default function CityStrategic() {
         <main className="container py-6 space-y-8">
           <section>
             <SectionHeader
-              title={<span className="inline-flex items-center gap-1.5">Churn intelligence <GlossaryHint id="churn" /></span>}
+              title={<Explain id="churn">Churn intelligence</Explain>}
               subtitle="Renewal vs re-renting leakage"
             />
             <div className="grid md:grid-cols-2 gap-3">
               <OperationalCard className="p-4">
                 <div className="flex items-end justify-between mb-3">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Renewal churn</p>
-                    <p className="text-2xl font-semibold">{churn.renewalChurn.total}</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
+                      <Explain id="renewalChurn">Renewal churn</Explain>
+                    </p>
+                    <p className="text-2xl font-semibold">{focusedChurn.renewalChurn.total}</p>
                   </div>
                   <span className="text-xs text-muted-foreground">root causes</span>
                 </div>
                 <ul className="space-y-1.5">
-                  {churn.renewalChurn.causes.map(c => (
+                  {focusedChurn.renewalChurn.causes.map(c => (
                     <li key={c.label} className="flex items-center gap-2 text-sm">
                       <span className="flex-1 text-foreground/80">{c.label}</span>
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-urgency-critical" style={{ width: `${(c.count / Math.max(churn.renewalChurn.total, 1)) * 100}%` }} />
+                        <div className="h-full bg-urgency-critical" style={{ width: `${(c.count / Math.max(focusedChurn.renewalChurn.total, 1)) * 100}%` }} />
                       </div>
                       <span className="tabular-nums w-8 text-right text-muted-foreground">{c.count}</span>
                     </li>
@@ -134,17 +136,19 @@ export default function CityStrategic() {
               <OperationalCard className="p-4">
                 <div className="flex items-end justify-between mb-3">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Re-renting churn</p>
-                    <p className="text-2xl font-semibold">{churn.reRentChurn.total}</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
+                      <Explain id="reRentChurn">Re-renting churn</Explain>
+                    </p>
+                    <p className="text-2xl font-semibold">{focusedChurn.reRentChurn.total}</p>
                   </div>
                   <span className="text-xs text-muted-foreground">leakage breakdown</span>
                 </div>
                 <ul className="space-y-1.5">
-                  {churn.reRentChurn.causes.map(c => (
+                  {focusedChurn.reRentChurn.causes.map(c => (
                     <li key={c.label} className="flex items-center gap-2 text-sm">
                       <span className="flex-1 text-foreground/80">{c.label}</span>
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-urgency-high" style={{ width: `${(c.count / Math.max(churn.reRentChurn.total, 1)) * 100}%` }} />
+                        <div className="h-full bg-urgency-high" style={{ width: `${(c.count / Math.max(focusedChurn.reRentChurn.total, 1)) * 100}%` }} />
                       </div>
                       <span className="tabular-nums w-8 text-right text-muted-foreground">{c.count}</span>
                     </li>
@@ -157,7 +161,7 @@ export default function CityStrategic() {
           <section>
             <SectionHeader
               title="Operational heatmap"
-              subtitle="Cities × operational dimensions"
+              subtitle="Cities × operational dimensions · click a city to open its War Room"
               right={<span className="text-xs text-muted-foreground"><BarChart3 className="h-3 w-3 inline mr-1" />green = strong · red = weak</span>}
             />
             <OperationalCard className="overflow-x-auto">
@@ -165,26 +169,32 @@ export default function CityStrategic() {
                 <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-muted/40">
                   <tr>
                     <th className="text-left p-3">City</th>
-                    <th className="p-2">Occupancy</th>
-                    <th className="p-2"><span className="inline-flex items-center gap-1">SLA <GlossaryHint id="sla" /></span></th>
-                    <th className="p-2">CSAT</th>
-                    <th className="p-2">Retention</th>
-                    <th className="p-2"><span className="inline-flex items-center gap-1">Esc. rate <GlossaryHint id="escalation" /></span></th>
+                    <th className="p-2"><Explain id="occupancy">Occupancy</Explain></th>
+                    <th className="p-2"><Explain id="sla">SLA</Explain></th>
+                    <th className="p-2"><Explain id="csat">CSAT</Explain></th>
+                    <th className="p-2"><Explain id="retention">Retention</Explain></th>
+                    <th className="p-2"><Explain id="escalationRate">Esc. rate</Explain></th>
+                    <th className="w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {cities.map(c => {
+                  {allCities.map(c => {
                     const retention = 100 - c.churn;
                     const escRate = Math.round((c.escalations / Math.max(c.portfolio, 1)) * 100);
                     const cellCls = 'p-2 text-center';
                     return (
-                      <tr key={c.city} className="border-t">
+                      <tr
+                        key={c.city}
+                        className="border-t hover:bg-muted/30 cursor-pointer"
+                        onClick={() => drillTL({ city: c.city, tl: c.city })}
+                      >
                         <td className="p-3 font-medium">{c.city}</td>
                         <td className={cellCls}><span className={cn('inline-block w-full py-1.5 rounded text-xs font-medium', heatTone(c.occupancy))}>{c.occupancy}%</span></td>
                         <td className={cellCls}><span className={cn('inline-block w-full py-1.5 rounded text-xs font-medium', heatTone(c.slaPercent))}>{c.slaPercent}%</span></td>
                         <td className={cellCls}><span className={cn('inline-block w-full py-1.5 rounded text-xs font-medium', heatTone(c.csat * 20))}>{c.csat.toFixed(1)}</span></td>
                         <td className={cellCls}><span className={cn('inline-block w-full py-1.5 rounded text-xs font-medium', heatTone(retention))}>{retention}%</span></td>
                         <td className={cellCls}><span className={cn('inline-block w-full py-1.5 rounded text-xs font-medium', heatTone(escRate, true))}>{escRate}%</span></td>
+                        <td className="p-2 text-right"><ArrowRight className="h-3.5 w-3.5 text-muted-foreground" /></td>
                       </tr>
                     );
                   })}
@@ -192,6 +202,7 @@ export default function CityStrategic() {
               </table>
             </OperationalCard>
           </section>
+
 
           <section>
             <SectionHeader title="Team coaching & review" subtitle="Recurring failure patterns" />
