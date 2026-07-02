@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import { AnimatePresence } from "framer-motion";
 import { GlobalNav } from "@/components/layout/GlobalNav";
 import { RoleProvider, useRole, ROLE_META } from "@/context/RoleContext";
+import { ScopeProvider } from "@/context/ScopeContext";
 import Index from "./pages/Index";
 import Leaderboard from "./pages/Leaderboard";
 import PMDashboard from "./pages/PMDashboard";
@@ -31,6 +32,7 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence mode="wait">
+      {/* Key on pathname only (not search) so scope drills don't remount the page. */}
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<RoleHome />} />
         <Route path="/pm" element={<PMCommand />} />
@@ -55,8 +57,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <RoleProvider>
-          <GlobalNav />
-          <AnimatedRoutes />
+          <ScopeProvider>
+            <GlobalNav />
+            <AnimatedRoutes />
+          </ScopeProvider>
         </RoleProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -28,7 +28,13 @@ import { Link } from 'react-router-dom';
 import { Property } from '@/types/property';
 import { PropertyDetailModal } from '@/components/property/PropertyDetailModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScopeBreadcrumb } from '@/components/acc/ScopeBreadcrumb';
+import { AttentionBanner } from '@/components/acc/AttentionBanner';
+import { PropertyGroupedQueue } from '@/components/acc/PropertyGroupedQueue';
+import { useScope } from '@/context/ScopeContext';
+import { Rows3, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
 
 const KIND_CHIP = (active: boolean, tone: 'all' | 'flagged' | 'expected') =>
   cn(
@@ -56,9 +62,11 @@ export default function PMCommand() {
   const [filters, setFilters] = useState<TaskFilterState>(EMPTY_TASK_FILTERS);
   const [activeTab, setActiveTab] = useState('actions');
   const [openProperty, setOpenProperty] = useState<Property | null>(null);
+  const [groupBy, setGroupBy] = useState<'task' | 'property'>('property');
+  const { scope } = useScope();
 
-  const summary = useMemo(() => getOperationalSummary(), []);
-  const allActions = useMemo(() => getCriticalActions(undefined, period), [period]);
+  const summary = useMemo(() => getOperationalSummary(scope), [scope]);
+  const allActions = useMemo(() => getCriticalActions(scope, period), [scope, period]);
 
   const actions = useMemo(() => {
     let list = kindFilter === 'all' ? allActions : allActions.filter(a => a.kind === kindFilter);
@@ -76,16 +84,17 @@ export default function PMCommand() {
   const expectedCount = allActions.filter(a => a.kind === 'expected').length;
   const flaggedCount = allActions.filter(a => a.kind === 'flagged').length;
 
-  const escalations = useMemo(() => getEscalations(), []);
-  const pipeline = useMemo(() => getPipelineCounts(), []);
-  const reRent = useMemo(() => getReRentingQueue(), []);
-  const followUps = useMemo(() => getFollowUps(), []);
+  const escalations = useMemo(() => getEscalations(scope), [scope]);
+  const pipeline = useMemo(() => getPipelineCounts(scope), [scope]);
+  const reRent = useMemo(() => getReRentingQueue(scope), [scope]);
+  const followUps = useMemo(() => getFollowUps(scope), [scope]);
 
   const propertyById = useMemo(() => {
     const map = new Map<string, Property>();
     allProperties.forEach(p => map.set(p.basic.propertyId, p));
     return map;
   }, []);
+
 
   const openByPropertyId = (id?: string) => {
     if (!id) return;
@@ -111,12 +120,13 @@ export default function PMCommand() {
           <div className="container py-2.5 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Property Manager</p>
+                <ScopeBreadcrumb className="mb-0.5" />
                 <h1 className="text-[15px] font-semibold tracking-tight truncate">
-                  {mockPMData.profile.name} · Daily Operations Inbox
+                  {scope.pmName || mockPMData.profile.name} · Daily Operations Inbox
                 </h1>
               </div>
             </div>
+
             <div className="flex items-center gap-2 flex-wrap">
               <PeriodControls
                 period={period} onPeriodChange={setPeriod}
@@ -140,7 +150,17 @@ export default function PMCommand() {
         </header>
 
         <main className="container py-4 space-y-4">
+          {(flaggedCount > 0 || summary.escalations > 0) && (
+            <AttentionBanner
+              tone={summary.escalations > 3 ? 'critical' : 'high'}
+              headline={`${flaggedCount} flagged item${flaggedCount === 1 ? '' : 's'} + ${summary.escalations} escalation${summary.escalations === 1 ? '' : 's'} need action`}
+              detail="Handle these before your routine tasks — they directly hit your score."
+              cta={{ label: 'Filter to flagged', onClick: () => setKindFilter('flagged') }}
+            />
+          )}
           <PeriodKpiStrip />
+
+
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="h-9">
@@ -156,10 +176,24 @@ export default function PMCommand() {
               {/* Section A — dominant Critical Action Queue */}
               <WBSection
                 title={<span className="inline-flex items-center gap-1.5">Today's critical action queue <GlossaryHint id="flagged" /></span>}
-                subtitle="Flagged = system-detected risk · Expected = your routine job"
+                subtitle="Grouped by property so one customer = one workspace · Flagged = system risk · Expected = routine"
                 count={actions.length}
                 right={
                   <>
+                    <div className="inline-flex border rounded overflow-hidden text-[11px]">
+                      <button
+                        className={cn('px-2 py-1 inline-flex items-center gap-1', groupBy === 'property' ? 'bg-foreground text-background' : 'bg-card text-muted-foreground hover:text-foreground')}
+                        onClick={() => setGroupBy('property')}
+                      >
+                        <Rows3 className="h-3 w-3" /> By property
+                      </button>
+                      <button
+                        className={cn('px-2 py-1 inline-flex items-center gap-1 border-l', groupBy === 'task' ? 'bg-foreground text-background' : 'bg-card text-muted-foreground hover:text-foreground')}
+                        onClick={() => setGroupBy('task')}
+                      >
+                        <LayoutList className="h-3 w-3" /> By task
+                      </button>
+                    </div>
                     <button className={KIND_CHIP(kindFilter === 'all', 'all')} onClick={() => setKindFilter('all')}>
                       All ({allActions.length})
                     </button>
@@ -173,6 +207,10 @@ export default function PMCommand() {
                   </>
                 }
               >
+                {groupBy === 'property' ? (
+                  <PropertyGroupedQueue actions={actions.slice(0, 60)} onOpenProperty={openByPropertyId} />
+                ) : (
+
                 <WorkbenchTable minWidth={1100}>
                   <WBHead>
                     <th className="w-6"></th>
@@ -231,7 +269,9 @@ export default function PMCommand() {
                     {actions.length === 0 && <WBEmpty colSpan={9} />}
                   </WBBody>
                 </WorkbenchTable>
+                )}
               </WBSection>
+
 
               {/* Section B — Escalation & Risk (dense) */}
               <WBSection
