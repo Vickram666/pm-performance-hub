@@ -62,9 +62,11 @@ export default function PMCommand() {
   const [filters, setFilters] = useState<TaskFilterState>(EMPTY_TASK_FILTERS);
   const [activeTab, setActiveTab] = useState('actions');
   const [openProperty, setOpenProperty] = useState<Property | null>(null);
+  const [groupBy, setGroupBy] = useState<'task' | 'property'>('property');
+  const { scope } = useScope();
 
-  const summary = useMemo(() => getOperationalSummary(), []);
-  const allActions = useMemo(() => getCriticalActions(undefined, period), [period]);
+  const summary = useMemo(() => getOperationalSummary(scope), [scope]);
+  const allActions = useMemo(() => getCriticalActions(scope, period), [scope, period]);
 
   const actions = useMemo(() => {
     let list = kindFilter === 'all' ? allActions : allActions.filter(a => a.kind === kindFilter);
@@ -82,16 +84,17 @@ export default function PMCommand() {
   const expectedCount = allActions.filter(a => a.kind === 'expected').length;
   const flaggedCount = allActions.filter(a => a.kind === 'flagged').length;
 
-  const escalations = useMemo(() => getEscalations(), []);
-  const pipeline = useMemo(() => getPipelineCounts(), []);
-  const reRent = useMemo(() => getReRentingQueue(), []);
-  const followUps = useMemo(() => getFollowUps(), []);
+  const escalations = useMemo(() => getEscalations(scope), [scope]);
+  const pipeline = useMemo(() => getPipelineCounts(scope), [scope]);
+  const reRent = useMemo(() => getReRentingQueue(scope), [scope]);
+  const followUps = useMemo(() => getFollowUps(scope), [scope]);
 
   const propertyById = useMemo(() => {
     const map = new Map<string, Property>();
     allProperties.forEach(p => map.set(p.basic.propertyId, p));
     return map;
   }, []);
+
 
   const openByPropertyId = (id?: string) => {
     if (!id) return;
