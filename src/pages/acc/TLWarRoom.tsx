@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Users, AlertTriangle, RefreshCw, Home, Timer, TrendingDown, ShieldAlert } from 'lucide-react';
+import { Users, AlertTriangle, RefreshCw, Home, Timer, TrendingDown, ShieldAlert, ArrowRight } from 'lucide-react';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { KpiPill, KpiBar } from '@/components/acc/primitives/KpiPill';
 import { OperationalCard, SectionHeader } from '@/components/acc/primitives/OperationalCard';
@@ -7,36 +7,49 @@ import { AgingBadge, UrgencyDot } from '@/components/acc/primitives/AgingBadge';
 import { PipelineFunnel } from '@/components/acc/primitives/PipelineFunnel';
 import { PeriodControls } from '@/components/acc/PeriodControls';
 import { PeriodKpiStrip } from '@/components/acc/PeriodKpiStrip';
-import { GlossaryHint } from '@/components/acc/Glossary';
+import { GlossaryHint, Explain } from '@/components/acc/Glossary';
+import { ScopeBreadcrumb } from '@/components/acc/ScopeBreadcrumb';
+import { AttentionBanner } from '@/components/acc/AttentionBanner';
 import { TakeActionMenu } from '@/components/acc/TakeActionMenu';
+import { useScope } from '@/context/ScopeContext';
 import { ACC_CITIES, getCityHealth, getEscalations, getOperationalSummary, getPipelineCounts, getPMMatrix, type AccPeriod } from '@/data/accAggregators';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
 
 export default function TLWarRoom() {
-  const [city, setCity] = useState<string>(ACC_CITIES[0]);
+  const { scope, drillCity, drillPM } = useScope();
+  const [city, setCity] = useState<string>(scope.city || ACC_CITIES[0]);
+  // Keep local city in sync with scope changes (e.g., breadcrumb reset).
+  const effectiveCity = scope.city || city;
   const [period, setPeriod] = useState<AccPeriod>('week');
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
 
-  const summary = useMemo(() => getOperationalSummary({ city }), [city]);
-  const matrix = useMemo(() => getPMMatrix(city), [city]);
-  const escalations = useMemo(() => getEscalations({ city }), [city]);
-  const pipeline = useMemo(() => getPipelineCounts({ city }), [city]);
-  const cityHealth = useMemo(() => getCityHealth().find(c => c.city === city), [city]);
+  const summary = useMemo(() => getOperationalSummary({ city: effectiveCity }), [effectiveCity]);
+  const matrix = useMemo(() => getPMMatrix(effectiveCity), [effectiveCity]);
+  const escalations = useMemo(() => getEscalations({ city: effectiveCity }), [effectiveCity]);
+  const pipeline = useMemo(() => getPipelineCounts({ city: effectiveCity }), [effectiveCity]);
+  const cityHealth = useMemo(() => getCityHealth().find(c => c.city === effectiveCity), [effectiveCity]);
+
+  const worst = useMemo(() => [...matrix].sort((a, b) => (b.escalations + b.overdueActions) - (a.escalations + a.overdueActions))[0], [matrix]);
+
+  const handleCityChange = (v: string) => {
+    setCity(v);
+    drillCity(v);
+  };
 
   return (
     <PageTransition>
       <div className="min-h-screen bg-background pb-16">
         <header className="border-b bg-card">
           <div className="container py-4 flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Team Lead</p>
-              <h1 className="text-xl font-semibold tracking-tight">{city} War Room</h1>
-              <p className="text-xs text-muted-foreground">Where is my city operation failing right now?</p>
+            <div className="min-w-0">
+              <ScopeBreadcrumb className="mb-1" />
+              <h1 className="text-xl font-semibold tracking-tight">{effectiveCity} War Room</h1>
+              <p className="text-xs text-muted-foreground">Where is my city operation failing right now? Click any PM row to drill into their inbox.</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Select value={city} onValueChange={setCity}>
+              <Select value={effectiveCity} onValueChange={handleCityChange}>
                 <SelectTrigger className="w-[160px] h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ACC_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -46,6 +59,18 @@ export default function TLWarRoom() {
             </div>
           </div>
         </header>
+
+        {worst && (
+          <div className="container py-4">
+            <AttentionBanner
+              tone={worst.performance === 'underperforming' ? 'critical' : 'high'}
+              headline={`${worst.name} needs coaching now`}
+              detail={`${worst.escalations} escalations · ${worst.overdueActions} overdue actions · SLA ${worst.slaPercent}%`}
+              cta={{ label: 'Open PM inbox', onClick: () => drillPM({ city: effectiveCity, pm: worst.pmId, pmName: worst.name }) }}
+            />
+          </div>
+        )}
+
 
         <div className="container py-4">
           <PeriodKpiStrip scope={{ city }} />
