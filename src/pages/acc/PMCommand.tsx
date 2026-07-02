@@ -176,10 +176,24 @@ export default function PMCommand() {
               {/* Section A — dominant Critical Action Queue */}
               <WBSection
                 title={<span className="inline-flex items-center gap-1.5">Today's critical action queue <GlossaryHint id="flagged" /></span>}
-                subtitle="Flagged = system-detected risk · Expected = your routine job"
+                subtitle="Grouped by property so one customer = one workspace · Flagged = system risk · Expected = routine"
                 count={actions.length}
                 right={
                   <>
+                    <div className="inline-flex border rounded overflow-hidden text-[11px]">
+                      <button
+                        className={cn('px-2 py-1 inline-flex items-center gap-1', groupBy === 'property' ? 'bg-foreground text-background' : 'bg-card text-muted-foreground hover:text-foreground')}
+                        onClick={() => setGroupBy('property')}
+                      >
+                        <Rows3 className="h-3 w-3" /> By property
+                      </button>
+                      <button
+                        className={cn('px-2 py-1 inline-flex items-center gap-1 border-l', groupBy === 'task' ? 'bg-foreground text-background' : 'bg-card text-muted-foreground hover:text-foreground')}
+                        onClick={() => setGroupBy('task')}
+                      >
+                        <LayoutList className="h-3 w-3" /> By task
+                      </button>
+                    </div>
                     <button className={KIND_CHIP(kindFilter === 'all', 'all')} onClick={() => setKindFilter('all')}>
                       All ({allActions.length})
                     </button>
@@ -193,6 +207,10 @@ export default function PMCommand() {
                   </>
                 }
               >
+                {groupBy === 'property' ? (
+                  <PropertyGroupedQueue actions={actions.slice(0, 60)} onOpenProperty={openByPropertyId} />
+                ) : (
+
                 <WorkbenchTable minWidth={1100}>
                   <WBHead>
                     <th className="w-6"></th>
