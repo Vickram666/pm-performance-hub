@@ -120,12 +120,13 @@ export default function PMCommand() {
           <div className="container py-2.5 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Property Manager</p>
+                <ScopeBreadcrumb className="mb-0.5" />
                 <h1 className="text-[15px] font-semibold tracking-tight truncate">
-                  {mockPMData.profile.name} · Daily Operations Inbox
+                  {scope.pmName || mockPMData.profile.name} · Daily Operations Inbox
                 </h1>
               </div>
             </div>
+
             <div className="flex items-center gap-2 flex-wrap">
               <PeriodControls
                 period={period} onPeriodChange={setPeriod}
@@ -149,7 +150,17 @@ export default function PMCommand() {
         </header>
 
         <main className="container py-4 space-y-4">
+          {(flaggedCount > 0 || summary.escalations > 0) && (
+            <AttentionBanner
+              tone={summary.escalations > 3 ? 'critical' : 'high'}
+              headline={`${flaggedCount} flagged item${flaggedCount === 1 ? '' : 's'} + ${summary.escalations} escalation${summary.escalations === 1 ? '' : 's'} need action`}
+              detail="Handle these before your routine tasks — they directly hit your score."
+              cta={{ label: 'Filter to flagged', onClick: () => setKindFilter('flagged') }}
+            />
+          )}
           <PeriodKpiStrip />
+
+
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="h-9">
