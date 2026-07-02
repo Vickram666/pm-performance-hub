@@ -73,8 +73,9 @@ export default function TLWarRoom() {
 
 
         <div className="container py-4">
-          <PeriodKpiStrip scope={{ city }} />
+          <PeriodKpiStrip scope={{ city: effectiveCity }} />
         </div>
+
 
         <KpiBar>
           <KpiPill label="Active portfolio" value={cityHealth?.portfolio ?? 0} icon={<Home className="h-4 w-4" />} />
@@ -111,7 +112,11 @@ export default function TLWarRoom() {
                 </thead>
                 <tbody>
                   {matrix.map(row => (
-                    <tr key={row.pmId} className="border-t hover:bg-muted/30">
+                    <tr
+                      key={row.pmId}
+                      className="border-t hover:bg-muted/30 cursor-pointer"
+                      onClick={() => drillPM({ city: effectiveCity, pm: row.pmId, pmName: row.name })}
+                    >
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <UrgencyDot urgency={row.performance === 'underperforming' ? 'critical' : row.performance === 'top' ? 'low' : 'medium'} />
@@ -136,8 +141,10 @@ export default function TLWarRoom() {
                           row.performance === 'underperforming' && 'bg-urgency-critical-soft text-urgency-critical',
                         )}>{row.performance}</span>
                       </td>
+                      <td className="p-3 pr-4 text-right"><ArrowRight className="h-3.5 w-3.5 text-muted-foreground inline" /></td>
                     </tr>
                   ))}
+
                 </tbody>
               </table>
             </OperationalCard>
