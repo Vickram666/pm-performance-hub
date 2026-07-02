@@ -1,12 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Home, TrendingDown, RefreshCw, AlertTriangle, Smile, Users, BarChart3 } from 'lucide-react';
+import { Home, TrendingDown, RefreshCw, AlertTriangle, Smile, Users, BarChart3, ArrowRight } from 'lucide-react';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { KpiPill, KpiBar } from '@/components/acc/primitives/KpiPill';
 import { OperationalCard, SectionHeader } from '@/components/acc/primitives/OperationalCard';
 import { PeriodControls } from '@/components/acc/PeriodControls';
 import { PeriodKpiStrip } from '@/components/acc/PeriodKpiStrip';
-import { GlossaryHint } from '@/components/acc/Glossary';
-import { getCityHealth, getChurnIntelligence, type AccPeriod } from '@/data/accAggregators';
+import { GlossaryHint, Explain } from '@/components/acc/Glossary';
+import { ScopeBreadcrumb } from '@/components/acc/ScopeBreadcrumb';
+import { AttentionBanner } from '@/components/acc/AttentionBanner';
+import { useScope } from '@/context/ScopeContext';
+import { ACC_CITIES, getCityHealth, getChurnIntelligence, type AccPeriod } from '@/data/accAggregators';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
 
@@ -19,10 +23,22 @@ function heatTone(value: number, invert = false) {
 }
 
 export default function CityStrategic() {
-  const cities = useMemo(() => getCityHealth(), []);
+  const { scope, drillCity, drillTL } = useScope();
+  const allCities = useMemo(() => getCityHealth(), []);
   const churn = useMemo(() => getChurnIntelligence(), []);
   const [period, setPeriod] = useState<AccPeriod>('month');
   const [dateRange, setDateRange] = useState<DateRange | null>(null);
+
+  // Focus on scoped city if set, else show org-wide summary.
+  const focused = scope.city ? allCities.filter(c => c.city === scope.city) : allCities;
+  const cities = focused.length ? focused : allCities;
+  const focusedChurn = scope.city
+    ? {
+        ...churn,
+        renewalChurn: { ...churn.renewalChurn, total: Math.round(churn.renewalChurn.total / Math.max(allCities.length, 1)) },
+        reRentChurn: { ...churn.reRentChurn, total: Math.round(churn.reRentChurn.total / Math.max(allCities.length, 1)) },
+      }
+    : churn;
 
   const totals = cities.reduce(
     (a, c) => ({
@@ -43,28 +59,49 @@ export default function CityStrategic() {
       <div className="min-h-screen bg-background pb-16">
         <header className="border-b bg-card">
           <div className="container py-4 flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">City Lead</p>
-              <h1 className="text-xl font-semibold tracking-tight">Strategic Overview</h1>
+            <div className="min-w-0">
+              <ScopeBreadcrumb className="mb-1" />
+              <h1 className="text-xl font-semibold tracking-tight">
+                {scope.city ? `${scope.city} — City Strategic View` : 'Strategic Overview'}
+              </h1>
               <p className="text-xs text-muted-foreground">Where are we winning, and where are we losing customers?</p>
             </div>
-            <PeriodControls period={period} onPeriodChange={setPeriod} dateRange={dateRange} onDateRangeChange={setDateRange} />
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={scope.city || '__all__'} onValueChange={(v) => v === '__all__' ? drillCity('') : drillCity(v)}>
+                <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="All cities" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All cities</SelectItem>
+                  {ACC_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <PeriodControls period={period} onPeriodChange={setPeriod} dateRange={dateRange} onDateRangeChange={setDateRange} />
+            </div>
           </div>
         </header>
 
-        <div className="container py-4">
-          <PeriodKpiStrip />
+        <div className="container py-4 space-y-3">
+          {scope.city && (
+            <AttentionBanner
+              tone="high"
+              headline={`Open ${scope.city} War Room to act on PM-level issues`}
+              detail={`${totals.escalations} escalations · ${totals.renewals} pending renewals · ${totals.pms} PMs`}
+              cta={{ label: 'Open TL War Room', onClick: () => drillTL({ city: scope.city!, tl: scope.city! }) }}
+            />
+          )}
+          <PeriodKpiStrip scope={{ city: scope.city }} />
         </div>
 
         <KpiBar>
           <KpiPill label="Portfolio" value={totals.portfolio} icon={<Home className="h-4 w-4" />} />
-          <KpiPill label="Avg occupancy" value={`${Math.round(totals.occupancy / n)}%`} tone="success" />
-          <KpiPill label="Avg churn" value={`${Math.round(totals.churn / n)}%`} tone={totals.churn / n > 8 ? 'critical' : 'neutral'} icon={<TrendingDown className="h-4 w-4" />} />
+          <KpiPill label="Occupancy" value={`${Math.round(totals.occupancy / n)}%`} tone="success" />
+          <KpiPill label="Churn" value={`${Math.round(totals.churn / n)}%`} tone={totals.churn / n > 8 ? 'critical' : 'neutral'} icon={<TrendingDown className="h-4 w-4" />} />
           <KpiPill label="Renewals pending" value={totals.renewals} icon={<RefreshCw className="h-4 w-4" />} />
           <KpiPill label="Escalations" value={totals.escalations} tone={totals.escalations > 20 ? 'high' : 'neutral'} icon={<AlertTriangle className="h-4 w-4" />} />
           <KpiPill label="CSAT" value={(totals.csat / n).toFixed(1)} tone="success" icon={<Smile className="h-4 w-4" />} />
           <KpiPill label="PMs" value={totals.pms} icon={<Users className="h-4 w-4" />} />
         </KpiBar>
+
+
 
         <main className="container py-6 space-y-8">
           <section>
