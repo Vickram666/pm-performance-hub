@@ -108,6 +108,8 @@ export default function TLWarRoom() {
                     <th className="text-right p-3">CSAT</th>
                     <th className="text-right p-3">Overdue</th>
                     <th className="text-right p-3 pr-4">Status</th>
+                    <th className="w-8"></th>
+
                   </tr>
                 </thead>
                 <tbody>

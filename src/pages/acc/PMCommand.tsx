@@ -28,7 +28,13 @@ import { Link } from 'react-router-dom';
 import { Property } from '@/types/property';
 import { PropertyDetailModal } from '@/components/property/PropertyDetailModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScopeBreadcrumb } from '@/components/acc/ScopeBreadcrumb';
+import { AttentionBanner } from '@/components/acc/AttentionBanner';
+import { PropertyGroupedQueue } from '@/components/acc/PropertyGroupedQueue';
+import { useScope } from '@/context/ScopeContext';
+import { Rows3, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
 
 const KIND_CHIP = (active: boolean, tone: 'all' | 'flagged' | 'expected') =>
   cn(
